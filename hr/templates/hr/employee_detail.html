@@ -1,0 +1,111 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ employee.full_name }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-user"></i> {{ employee.full_name }}</h1>
+    {% if user.is_hr_manager %}
+    <div style="display: flex; gap: 15px; margin-top: 20px;">
+        <a href="{% url 'hr:employee_edit' employee.id %}" class="btn btn-edit">
+            <i class="fas fa-edit"></i> Редактировать
+        </a>
+        <a href="{% url 'hr:employee_delete' employee.id %}" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Удалить
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div style="display: grid; grid-template-columns: 300px 1fr; gap: 30px;">
+    <div class="form-card" style="padding: 30px; text-align: center;">
+        {% if employee.user.photo %}
+        <img src="{{ employee.user.photo.url }}" alt="{{ employee.full_name }}" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; margin-bottom: 20px;">
+        {% elif employee.photo %}
+        <img src="{{ employee.photo.url }}" alt="{{ employee.full_name }}" style="width: 200px; height: 200px; border-radius: 50%; object-fit: cover; margin-bottom: 20px;">
+        {% else %}
+        <div style="width: 200px; height: 200px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 4em; font-weight: bold; margin: 0 auto 20px;">
+            {{ employee.first_name|first }}{{ employee.last_name|first }}
+        </div>
+        {% endif %}
+        <h2 style="margin-bottom: 10px;">{{ employee.full_name }}</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 20px;">{{ employee.position.name|default:"Без должности" }}</p>
+        <span style="padding: 8px 20px; border-radius: 20px; font-size: 0.9em; font-weight: 600; background: {% if employee.status == 'active' %}#D1FAE5{% elif employee.status == 'on_leave' %}#FEF3C7{% elif employee.status == 'sick_leave' %}#DBEAFE{% else %}#FEE2E2{% endif %}; color: {% if employee.status == 'active' %}#065F46{% elif employee.status == 'on_leave' %}#92400E{% elif employee.status == 'sick_leave' %}#1E40AF{% else %}#991B1B{% endif %};">
+            {{ employee.get_status_display }}
+        </span>
+    </div>
+
+    <div>
+        <div class="form-card">
+            <h3 class="section-title">Основная информация</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email</label>
+                    <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ employee.email }}</div>
+                </div>
+                <div class="form-group">
+                    <label>Телефон</label>
+                    <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ employee.phone }}</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Дата рождения</label>
+                    <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ employee.date_of_birth|date:"d.m.Y" }}</div>
+                </div>
+                <div class="form-group">
+                    <label>Дата приема</label>
+                    <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ employee.hire_date|date:"d.m.Y" }}</div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Отдел</label>
+                    <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ employee.department.name|default:"Не указан" }}</div>
+                </div>
+                <div class="form-group">
+                    <label>Стаж (лет)</label>
+                    <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ employee.experience_years }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if trainings %}
+        <div class="form-card" style="margin-top: 30px;">
+            <h3 class="section-title">Обучение</h3>
+            <div class="transactions-list">
+                {% for training in trainings %}
+                <div class="transaction-card">
+                    <div class="transaction-info">
+                        <div class="transaction-category">{{ training.title }}</div>
+                        <div class="transaction-description">{{ training.get_status_display }}</div>
+                        <div class="transaction-date">{{ training.start_date|date:"d.m.Y" }} - {{ training.end_date|date:"d.m.Y" }}</div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if certificates %}
+        <div class="form-card" style="margin-top: 30px;">
+            <h3 class="section-title">Сертификаты</h3>
+            <div class="transactions-list">
+                {% for cert in certificates %}
+                <div class="transaction-card">
+                    <div class="transaction-info">
+                        <div class="transaction-category">{{ cert.training.title }}</div>
+                        <div class="transaction-date">Выдан: {{ cert.issue_date|date:"d.m.Y" }}</div>
+                    </div>
+                    <a href="{{ cert.document.url }}" class="btn btn-edit" target="_blank">
+                        <i class="fas fa-download"></i> Скачать
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

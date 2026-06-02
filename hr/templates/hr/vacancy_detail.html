@@ -1,0 +1,81 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ vacancy.title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-briefcase"></i> {{ vacancy.title }}</h1>
+    {% if user.is_hr_manager %}
+    <div style="display: flex; gap: 15px; margin-top: 20px;">
+        <a href="{% url 'hr:vacancy_edit' vacancy.id %}" class="btn btn-edit">
+            <i class="fas fa-edit"></i> Редактировать
+        </a>
+        <a href="{% url 'hr:vacancy_delete' vacancy.id %}" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Удалить
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="form-card">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 30px;">
+        <div>
+            <span style="padding: 8px 20px; border-radius: 20px; font-size: 0.9em; font-weight: 600; background: {% if vacancy.status == 'open' %}#D1FAE5{% elif vacancy.status == 'closed' %}#FEE2E2{% else %}#F3F4F6{% endif %}; color: {% if vacancy.status == 'open' %}#065F46{% elif vacancy.status == 'closed' %}#991B1B{% else %}#374151{% endif %};">
+                {{ vacancy.get_status_display }}
+            </span>
+        </div>
+        <div style="text-align: right; color: var(--text-secondary);">
+            <div>Создана: {{ vacancy.created_at|date:"d.m.Y H:i" }}</div>
+            {% if vacancy.closed_at %}
+            <div>Закрыта: {{ vacancy.closed_at|date:"d.m.Y H:i" }}</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <h3 class="section-title">Описание</h3>
+    <div style="padding: 20px; background: var(--bg); border-radius: 10px; margin-bottom: 30px; white-space: pre-wrap;">{{ vacancy.description }}</div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Зарплата</label>
+            <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">
+                {% if vacancy.salary_min or vacancy.salary_max %}
+                    {% if vacancy.salary_min %}{{ vacancy.salary_min }}{% endif %}{% if vacancy.salary_min and vacancy.salary_max %} - {% endif %}{% if vacancy.salary_max %}{{ vacancy.salary_max }}{% endif %} руб.
+                {% else %}
+                    Не указана
+                {% endif %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>HR-менеджер</label>
+            <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ vacancy.hr_manager.username|default:"Не указан" }}</div>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="form-group">
+            <label>Должность</label>
+            <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ vacancy.position.name|default:"Не указана" }}</div>
+        </div>
+        <div class="form-group">
+            <label>Отдел</label>
+            <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ vacancy.department.name|default:"Не указан" }}</div>
+        </div>
+    </div>
+
+    {% if vacancy.status == 'open' and not user.is_hr_manager %}
+    <div style="margin-top: 30px; padding-top: 30px; border-top: 2px solid var(--border); text-align: center;">
+        <a href="https://t.me/varvaraezgindarova?text=Здравствуйте!%20Меня%20интересует%20вакансия%20{{ vacancy.title|urlencode }}" 
+           target="_blank" 
+           rel="noopener" 
+           class="btn btn-primary" 
+           style="display: inline-flex; align-items: center; gap: 10px; padding: 15px 30px; font-size: 1.1em; font-weight: 600;">
+            <i class="fab fa-telegram-plane"></i> Откликнуться на вакансию
+        </a>
+        <p style="margin-top: 15px; color: var(--text-secondary); font-size: 0.9em;">
+            Напишите HR-менеджеру в Telegram для подачи заявки
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

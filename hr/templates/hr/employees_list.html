@@ -1,0 +1,106 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Сотрудники{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-users"></i> Сотрудники</h1>
+    <div style="display: flex; gap: 15px; margin-top: 20px; flex-wrap: wrap;">
+        <a href="{% url 'hr:employee_create' %}" class="btn btn-primary" style="width: auto;">
+            <i class="fas fa-plus"></i> Добавить сотрудника
+        </a>
+        <a href="{% url 'hr:import_employees' %}" class="btn btn-secondary" style="width: auto;">
+            <i class="fas fa-file-import"></i> Импорт из файла
+        </a>
+    </div>
+</div>
+
+<!-- Фильтры и поиск -->
+<div class="form-card" style="max-width: 100%; padding: 25px;">
+    <form method="get" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: end;">
+        <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+            <label>Поиск</label>
+            <input type="text" name="search" value="{{ search_query }}" placeholder="Имя, фамилия, email..." class="form-control">
+        </div>
+        <div class="form-group" style="min-width: 180px; margin-bottom: 0;">
+            <label>Отдел</label>
+            <select name="department" class="form-control">
+                <option value="">Все отделы</option>
+                {% for dept in departments %}
+                <option value="{{ dept.id }}" {% if department_filter == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="min-width: 180px; margin-bottom: 0;">
+            <label>Должность</label>
+            <select name="position" class="form-control">
+                <option value="">Все должности</option>
+                {% for pos in positions %}
+                <option value="{{ pos.id }}" {% if position_filter == pos.id|stringformat:"s" %}selected{% endif %}>{{ pos.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group" style="min-width: 150px; margin-bottom: 0;">
+            <label>Статус</label>
+            <select name="status" class="form-control">
+                <option value="">Все статусы</option>
+                <option value="active" {% if status_filter == "active" %}selected{% endif %}>Работает</option>
+                <option value="on_leave" {% if status_filter == "on_leave" %}selected{% endif %}>В отпуске</option>
+                <option value="sick_leave" {% if status_filter == "sick_leave" %}selected{% endif %}>На больничном</option>
+                <option value="dismissed" {% if status_filter == "dismissed" %}selected{% endif %}>Уволен</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: auto; margin-top: 0;">
+            <i class="fas fa-search"></i> Найти
+        </button>
+    </form>
+</div>
+
+<!-- Список сотрудников -->
+{% if page_obj %}
+<div class="transactions-list">
+    {% for employee in page_obj %}
+    <div class="transaction-card">
+        <div style="display: flex; align-items: center; gap: 20px; flex: 1;">
+            {% if employee.photo %}
+            <img src="{{ employee.photo.url }}" alt="{{ employee.full_name }}" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
+            {% else %}
+            <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5em; font-weight: bold;">
+                {{ employee.first_name|first }}{{ employee.last_name|first }}
+            </div>
+            {% endif %}
+            <div class="transaction-info" style="flex: 1;">
+                <div class="transaction-category">{{ employee.full_name }}</div>
+                <div class="transaction-description">{{ employee.position.name|default:"Без должности" }} | {{ employee.department.name|default:"Без отдела" }}</div>
+                <div class="transaction-date">{{ employee.email }} | {{ employee.phone }}</div>
+            </div>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <span style="padding: 5px 15px; border-radius: 20px; font-size: 0.85em; font-weight: 600; background: {% if employee.status == 'active' %}#D1FAE5{% elif employee.status == 'on_leave' %}#FEF3C7{% elif employee.status == 'sick_leave' %}#DBEAFE{% else %}#FEE2E2{% endif %}; color: {% if employee.status == 'active' %}#065F46{% elif employee.status == 'on_leave' %}#92400E{% elif employee.status == 'sick_leave' %}#1E40AF{% else %}#991B1B{% endif %};">
+                {{ employee.get_status_display }}
+            </span>
+            <a href="{% url 'hr:employee_detail' employee.id %}" class="btn btn-edit">Подробнее</a>
+            {% if user.is_hr_manager %}
+            <a href="{% url 'hr:employee_edit' employee.id %}" class="btn btn-edit">Редактировать</a>
+            <a href="{% url 'hr:employee_delete' employee.id %}" class="btn btn-danger">Удалить</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Пагинация -->
+<div style="display: flex; justify-content: center; gap: 10px; margin-top: 30px;">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if position_filter %}&position={{ position_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary">Назад</a>
+    {% endif %}
+    <span style="padding: 10px 20px; display: flex; align-items: center;">Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if department_filter %}&department={{ department_filter }}{% endif %}{% if position_filter %}&position={{ position_filter }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="btn btn-secondary">Вперёд</a>
+    {% endif %}
+</div>
+{% else %}
+<div class="empty-state">Сотрудники не найдены</div>
+{% endif %}
+{% endblock %}
+

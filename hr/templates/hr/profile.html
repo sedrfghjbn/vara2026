@@ -1,0 +1,136 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Профиль{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-user-edit"></i> Профиль</h1>
+</div>
+
+<div class="form-card">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_first_name">Имя *</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                    {% for error in form.first_name.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_last_name">Фамилия *</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                    {% for error in form.last_name.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="id_middle_name">Отчество</label>
+            {{ form.middle_name }}
+            {% if form.middle_name.errors %}
+                {% for error in form.middle_name.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_date_of_birth">Дата рождения</label>
+                {{ form.date_of_birth }}
+                {% if form.date_of_birth.help_text %}
+                <small class="form-text text-muted">{{ form.date_of_birth.help_text }}</small>
+                {% endif %}
+                {% if form.date_of_birth.errors %}
+                    {% for error in form.date_of_birth.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_phone">Телефон</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                    {% for error in form.phone.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="id_email">Email *</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                {% for error in form.email.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="id_photo">Фото</label>
+            {% if user.photo %}
+            <div style="margin-bottom: 15px;">
+                <img src="{{ user.photo.url }}" alt="Текущее фото" style="max-width: 200px; max-height: 200px; border-radius: 10px; border: 2px solid var(--border);">
+            </div>
+            {% endif %}
+            {{ form.photo }}
+            {% if form.photo.errors %}
+                {% for error in form.photo.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+            <small class="form-text">Загрузите ваше фото (JPG, PNG)</small>
+        </div>
+
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-save"></i> Сохранить
+            </button>
+            <a href="{% url 'hr:index' %}" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-times"></i> Отмена
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="form-card" style="margin-top: 24px;">
+    <h2 style="margin-bottom: 16px;"><i class="fab fa-telegram-plane"></i> Telegram-уведомления</h2>
+
+    {% if telegram_link %}
+    <p style="color: var(--success, #065F46); margin-bottom: 12px;">
+        <i class="fas fa-check-circle"></i> Telegram привязан (chat_id: {{ telegram_link.telegram_chat_id }})
+    </p>
+    {% else %}
+    <p style="color: var(--text-secondary); margin-bottom: 16px;">
+        Привяжите Telegram, чтобы получать HR-уведомления по вашей роли.
+    </p>
+    {% endif %}
+
+    {% if telegram_bind_code %}
+    <div style="padding: 16px; background: var(--bg); border-radius: 10px; margin-bottom: 16px;">
+        <strong>Ваш персональный код привязки:</strong>
+        <code style="font-size: 1.2em; display: block; margin: 8px 0;">{{ telegram_bind_code }}</code>
+        <p style="margin-top: 12px; margin-bottom: 8px;"><strong>Как привязать Telegram:</strong></p>
+        <ol style="margin: 0 0 0 20px; color: var(--text-secondary); line-height: 1.7;">
+            <li>Откройте бота <strong>@VaraKursbot</strong> и нажмите <strong>Start</strong> (или отправьте <code>/start</code>)</li>
+            <li>Бот попросит код — отправьте код <strong>отдельным сообщением</strong>: <code>{{ telegram_bind_code }}</code></li>
+            <li>Дождитесь подтверждения привязки от бота</li>
+            <li>Команды бота: <code>/status</code>, <code>/mytrainings</code>, <code>/help</code></li>
+        </ol>
+        <p style="margin-top: 12px; color: var(--text-secondary); font-size: 0.9em;">
+            Код выдаётся один раз и не меняется. При запущенном <code>runserver</code> бот подключается автоматически.
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

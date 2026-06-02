@@ -1,0 +1,64 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Штатное расписание{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-users"></i> Штатное расписание</h1>
+    <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+        <a href="{% url 'hr:report_staffing' %}?format=csv" class="btn btn-secondary">
+            <i class="fas fa-file-csv"></i> Экспорт CSV
+        </a>
+        <a href="{% url 'hr:report_staffing' %}?format=xlsx" class="btn btn-secondary">
+            <i class="fas fa-file-excel"></i> Экспорт XLSX
+        </a>
+        <a href="{% url 'hr:report_staffing' %}?format=json" class="btn btn-secondary">
+            <i class="fas fa-file-code"></i> Экспорт JSON
+        </a>
+    </div>
+</div>
+
+<div class="stat-card" style="text-align: center; margin-bottom: 30px;">
+    <div class="stat-label"><i class="fas fa-users"></i> Всего сотрудников</div>
+    <div class="stat-value balance">{{ total_count }}</div>
+</div>
+
+<div class="form-card" style="max-width: 100%;">
+    <h3 class="section-title">Сотрудники по отделам</h3>
+    {% if departments_data %}
+    {% for dept_name, dept_employees in departments_data.items %}
+    <div style="margin-bottom: 40px;">
+        <h4 style="font-size: 1.3em; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--border);">
+            {{ dept_name }} ({{ dept_employees|length }})
+        </h4>
+        <div class="transactions-list">
+            {% for emp in dept_employees %}
+            <div class="transaction-card">
+                <div style="display: flex; align-items: center; gap: 20px; flex: 1;">
+                    {% if emp.photo %}
+                    <img src="{{ emp.photo.url }}" alt="{{ emp.full_name }}" style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover;">
+                    {% else %}
+                    <div style="width: 50px; height: 50px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.2em; font-weight: bold;">
+                        {{ emp.first_name|first }}{{ emp.last_name|first }}
+                    </div>
+                    {% endif %}
+                    <div class="transaction-info" style="flex: 1;">
+                        <div class="transaction-category">{{ emp.full_name }}</div>
+                        <div class="transaction-description">{{ emp.position.name|default:"Без должности" }}</div>
+                        <div class="transaction-date">{{ emp.email }} | {{ emp.phone }}</div>
+                    </div>
+                </div>
+                <div style="text-align: right; color: var(--text-secondary);">
+                    <div>Принят: {{ emp.hire_date|date:"d.m.Y" }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">Сотрудники не найдены</div>
+    {% endif %}
+</div>
+{% endblock %}
+

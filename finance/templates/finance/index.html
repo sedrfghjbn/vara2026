@@ -1,0 +1,523 @@
+{% extends 'finance/base.html' %}
+
+{% block content %}
+<!-- Вкладка Транзакции -->
+<div class="tab-content active" id="transactions">
+    <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-exchange-alt"></i> Транзакции</h1>
+        <div class="page-subtitle">Управляйте доходами и расходами</div>
+    </div>
+    
+    <!-- Модальное окно управления категориями -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-tags"></i> Управление категориями</h2>
+                <span class="modal-close" onclick="closeCategoryModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form method="post" action="{% url 'add_category' %}" style="margin-bottom: 30px;">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 1;">
+                            <label>Название категории:</label>
+                            <input type="text" name="name" required placeholder="Например: Кафе" style="width: 100%;">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label>Тип:</label>
+                            <select name="type" required style="width: 100%;">
+                                <option value="income">Доход</option>
+                                <option value="expense">Расход</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Добавить категорию
+                    </button>
+                </form>
+                
+                {% if user_categories %}
+                <div style="margin-top: 30px; padding-top: 30px; border-top: 2px solid var(--border);">
+                    <h3 style="font-size: 1.1em; margin-bottom: 20px; color: var(--text-primary); font-weight: 700;">
+                        <i class="fas fa-list"></i> Ваши категории:
+                    </h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        {% for category in user_categories %}
+                        <div class="category-badge" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 18px; background: {% if category.type == 'income' %}rgba(34, 197, 94, 0.1){% else %}rgba(239, 68, 68, 0.1){% endif %}; border-radius: 25px; border: 2px solid {% if category.type == 'income' %}rgba(34, 197, 94, 0.3){% else %}rgba(239, 68, 68, 0.3){% endif %};" data-type="{{ category.type }}">
+                            <span style="font-weight: 600; color: var(--text-primary);">{{ category.name }}</span>
+                            <span style="font-size: 0.85em; color: var(--text-muted);">({{ category.get_type_display }})</span>
+                            <form method="post" action="{% url 'delete_category' category.id %}" style="display: inline; margin: 0;">
+                                {% csrf_token %}
+                                <button type="submit" onclick="return confirm('Удалить категорию «{{ category.name }}»?')" 
+                                        style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 0; margin-left: 8px; font-size: 1.1em; transition: color 0.2s;" 
+                                        onmouseover="this.style.color='#ef4444'" 
+                                        onmouseout="this.style.color='var(--text-muted)'"
+                                        title="Удалить">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <i class="fas fa-inbox" style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;"></i>
+                    <p>У вас пока нет категорий. Создайте первую категорию выше.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Форма добавления транзакции -->
+    <div class="form-card">
+        <h2><i class="fas fa-plus-circle"></i> Добавить транзакцию</h2>
+        <form method="post" action="{% url 'add_transaction' %}">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Тип:</label>
+                    <select name="type" id="transactionType" required>
+                        <option value="income">Доход</option>
+                        <option value="expense">Расход</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Категория:</label>
+                    <select name="category" id="transactionCategory" required>
+                        <option value="">Выберите категорию</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-divider"></div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Сумма (₽):</label>
+                    <input type="number" name="amount" id="transactionAmount" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Дата:</label>
+                    <input type="date" name="date" id="transactionDate" 
+                           value="{% if selected_month and selected_year %}{{ selected_year }}-{{ selected_month|stringformat:'02d' }}-01{% endif %}" 
+                           required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Описание <span style="color: #94A3B8; font-weight: normal; font-size: 0.85em;">(необязательно)</span>:</label>
+                <input type="text" name="description" id="transactionDescription" placeholder="Добавьте описание транзакции">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Добавить транзакцию</button>
+        </form>
+    </div>
+
+    <!-- История транзакций -->
+    <div class="section-title"><i class="fas fa-history"></i> История транзакций</div>
+    
+    <div class="filters">
+        <form method="get" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end;">
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            <input type="hidden" name="year" value="{{ selected_year }}">
+            <select name="filter_type" id="filterType">
+                <option value="all" {% if filter_type == 'all' %}selected{% endif %}>Все</option>
+                <option value="income" {% if filter_type == 'income' %}selected{% endif %}>Доходы</option>
+                <option value="expense" {% if filter_type == 'expense' %}selected{% endif %}>Расходы</option>
+            </select>
+            <select name="filter_category" id="filterCategory">
+                <option value="all" {% if filter_category == 'all' %}selected{% endif %}>Все категории</option>
+                {% for cat in categories.income %}
+                    <option value="{{ cat }}" {% if filter_category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+                {% for cat in categories.expense %}
+                    <option value="{{ cat }}" {% if filter_category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary" style="width: auto; margin: 0;">Фильтровать</button>
+        </form>
+    </div>
+    
+    <div class="transactions-list">
+        {% if transactions %}
+            {% for transaction in transactions %}
+            <div class="transaction-card {{ transaction.type }}">
+                <div class="transaction-info">
+                    <div class="transaction-category">{{ transaction.category }}</div>
+                    {% if transaction.description %}
+                        <div class="transaction-description">{{ transaction.description }}</div>
+                    {% else %}
+                        <div class="transaction-description" style="color: #94A3B8; font-style: italic;">Без описания</div>
+                    {% endif %}
+                    <div class="transaction-date">{{ transaction.date|date:"d F Y" }}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div class="transaction-amount {{ transaction.type }}">
+                        {% if transaction.type == 'income' %}+{% else %}-{% endif %}{{ transaction.amount|floatformat:0 }} ₽
+                    </div>
+                    <button type="button" class="btn btn-edit edit-transaction-btn" 
+                            data-id="{{ transaction.id }}"
+                            data-type="{{ transaction.type }}"
+                            data-category="{{ transaction.category }}"
+                            data-amount="{{ transaction.amount }}"
+                            data-description="{{ transaction.description|default:'' }}"
+                            data-date="{{ transaction.date|date:'Y-m-d' }}">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </button>
+                    <form method="post" action="{% url 'delete_transaction' transaction.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить эту транзакцию?')"><i class="fas fa-trash"></i> Удалить</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">Нет транзакций</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Вкладка Бюджеты -->
+<div class="tab-content" id="budgets" style="display: none;">
+    <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-chart-pie"></i> Бюджеты</h1>
+        <div class="page-subtitle">Контролируйте расходы по категориям</div>
+    </div>
+    
+    <!-- Форма создания бюджета -->
+    <div class="form-card">
+        <h2><i class="fas fa-plus-circle"></i> Создать бюджет</h2>
+        <form method="post" action="{% url 'add_budget' %}">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Категория:</label>
+                    <select name="category" id="budgetCategory" required>
+                        <option value="">Выберите категорию</option>
+                        {% for cat in categories.expense %}
+                            <option value="{{ cat }}">{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Период:</label>
+                    <select name="period" id="budgetPeriod" required>
+                        <option value="month">Месяц</option>
+                        <option value="week">Неделя</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Лимит (₽):</label>
+                <input type="number" name="limit" id="budgetLimit" min="0" step="0.01" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Создать бюджет</button>
+        </form>
+    </div>
+
+    <!-- Список бюджетов -->
+    <div class="section-title"><i class="fas fa-list"></i> Мои бюджеты</div>
+    <div class="budgets-list">
+        {% if budgets_with_expenses %}
+            {% for item in budgets_with_expenses %}
+            <div class="budget-card">
+                <div class="budget-header">
+                    <div>
+                        <div class="budget-category">{{ item.budget.category }}</div>
+                        <div class="budget-limit">Лимит: {{ item.budget.limit|floatformat:0 }} ₽ / {{ item.budget.get_period_display }}</div>
+                    </div>
+                </div>
+                <div class="budget-stats">
+                    <div class="budget-amount">{{ item.expenses|floatformat:0 }} ₽ / {{ item.budget.limit|floatformat:0 }} ₽</div>
+                    <div class="budget-percentage">{{ item.percentage|floatformat:1 }}% использовано</div>
+                </div>
+                <div class="budget-progress">
+                    <div class="budget-progress-bar {% if item.percentage >= 100 %}danger{% elif item.percentage >= 80 %}warning{% endif %}" style="width: {% if item.percentage > 100 %}100{% else %}{{ item.percentage|floatformat:0 }}{% endif %}%"></div>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button type="button" class="btn btn-edit edit-budget-btn" 
+                            data-id="{{ item.budget.id }}"
+                            data-category="{{ item.budget.category }}"
+                            data-limit="{{ item.budget.limit }}"
+                            data-period="{{ item.budget.period }}">
+                        <i class="fas fa-edit"></i> Редактировать
+                    </button>
+                    <form method="post" action="{% url 'delete_budget' item.budget.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить этот бюджет?')"><i class="fas fa-trash"></i> Удалить</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">Нет бюджетов</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Вкладка Цели -->
+<div class="tab-content" id="goals" style="display: none;">
+    <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-bullseye"></i> Финансовые цели</h1>
+        <div class="page-subtitle">Достигайте своих финансовых мечтаний</div>
+    </div>
+    
+    <!-- Форма создания цели -->
+    <div class="form-card">
+        <h2><i class="fas fa-plus-circle"></i> Создать финансовую цель</h2>
+        <form method="post" action="{% url 'add_goal' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label>Название цели:</label>
+                <input type="text" name="name" id="goalName" required>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Целевая сумма (₽):</label>
+                    <input type="number" name="amount" id="goalAmount" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Текущая сумма (₽):</label>
+                    <input type="number" name="current" id="goalCurrent" min="0" step="0.01" value="0">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Срок:</label>
+                <input type="date" name="deadline" id="goalDeadline" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Создать цель</button>
+        </form>
+    </div>
+
+    <!-- Список целей -->
+    <div class="section-title"><i class="fas fa-list"></i> Мои цели</div>
+    <div class="goals-list">
+        {% if goals %}
+            {% for goal in goals %}
+            <div class="goal-card">
+                <div class="goal-header">
+                    <div>
+                        <div class="goal-name">{{ goal.name }}</div>
+                        <div class="goal-deadline">До {{ goal.deadline|date:"d.m.Y" }}</div>
+                    </div>
+                    <div class="goal-amount">{{ goal.current|floatformat:0 }} ₽ / {{ goal.amount|floatformat:0 }} ₽</div>
+                </div>
+                <div class="goal-progress">
+                    {% widthratio goal.current goal.amount 100 as progress_percent %}
+                    <div class="goal-progress-bar" style="width: {% if progress_percent > 100 %}100{% else %}{{ progress_percent }}{% endif %}%">
+                        {% if progress_percent > 100 %}100{% else %}{{ progress_percent }}{% endif %}%
+                    </div>
+                </div>
+                <form method="post" action="{% url 'delete_goal' goal.id %}" style="margin-top: 15px;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Удалить эту цель?')"><i class="fas fa-trash"></i> Удалить</button>
+                </form>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">Нет целей</div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Заполнение категорий при изменении типа транзакции
+document.getElementById('transactionType').addEventListener('change', function() {
+    const type = this.value;
+    const categorySelect = document.getElementById('transactionCategory');
+    categorySelect.innerHTML = '<option value="">Выберите категорию</option>';
+    
+    const categoriesData = {
+        income: [{% for cat in categories.income %}'{{ cat|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        expense: [{% for cat in categories.expense %}'{{ cat|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}]
+    };
+    
+    if (categoriesData[type] && Array.isArray(categoriesData[type])) {
+        categoriesData[type].forEach(function(cat) {
+            const option = document.createElement('option');
+            option.value = cat;
+            option.textContent = cat;
+            categorySelect.appendChild(option);
+        });
+    }
+});
+
+// Инициализация категорий
+if (document.getElementById('transactionType').value) {
+    document.getElementById('transactionType').dispatchEvent(new Event('change'));
+}
+
+// Функция для обновления даты в форме транзакции на основе выбранного месяца
+function updateTransactionDateFromSelectedMonth() {
+    const dateInput = document.getElementById('transactionDate');
+    const monthSelect = document.getElementById('monthSelect');
+    
+    if (dateInput && monthSelect) {
+        // Проверяем, не находимся ли мы в режиме редактирования
+        const form = dateInput.closest('form');
+        if (form && form.querySelector('.btn-cancel')) {
+            // В режиме редактирования не меняем дату
+            return;
+        }
+        
+        const selectedOption = monthSelect.options[monthSelect.selectedIndex];
+        const selectedYear = selectedOption.getAttribute('data-year');
+        const selectedMonth = selectedOption.value;
+        
+        if (selectedYear && selectedMonth) {
+            const year = parseInt(selectedYear);
+            const month = parseInt(selectedMonth);
+            // Устанавливаем дату на первое число выбранного месяца
+            const defaultDate = new Date(year, month - 1, 1);
+            dateInput.valueAsDate = defaultDate;
+        }
+    }
+}
+
+// Установка даты по умолчанию при загрузке (если не установлена через атрибут value)
+(function() {
+    const dateInput = document.getElementById('transactionDate');
+    if (dateInput && !dateInput.value) {
+        updateTransactionDateFromSelectedMonth();
+    }
+})();
+
+// Обновление года при выборе месяца и автоматическая отправка формы
+const monthSelect = document.getElementById('monthSelect');
+if (monthSelect) {
+    monthSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const year = selectedOption.getAttribute('data-year');
+        if (year) {
+            const yearInput = document.getElementById('yearInput');
+            if (yearInput) {
+                yearInput.value = year;
+            }
+        }
+        
+        // Обновляем дату в форме транзакции на первое число выбранного месяца
+        updateTransactionDateFromSelectedMonth();
+        
+        // Автоматически отправляем форму при выборе месяца
+        if (this.form) {
+            this.form.submit();
+        }
+    });
+}
+
+// Редактирование транзакции
+function editTransaction(id, type, category, amount, description, date) {
+    // Заполняем форму данными транзакции
+    document.getElementById('transactionType').value = type;
+    document.getElementById('transactionType').dispatchEvent(new Event('change'));
+    
+    setTimeout(() => {
+        document.getElementById('transactionCategory').value = category;
+    }, 100);
+    
+    document.getElementById('transactionAmount').value = amount;
+    document.getElementById('transactionDescription').value = description || '';
+    document.getElementById('transactionDate').value = date;
+    
+    // Меняем форму на режим редактирования
+    const form = document.querySelector('#transactions form[action*="add-transaction"]');
+    if (form) {
+        form.action = '/edit-transaction/' + id + '/';
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.textContent = 'Сохранить изменения';
+    
+        // Прокручиваем к форме
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Добавляем кнопку отмены
+        let cancelBtn = form.querySelector('.btn-cancel');
+        if (!cancelBtn) {
+            cancelBtn = document.createElement('button');
+            cancelBtn.type = 'button';
+            cancelBtn.className = 'btn btn-secondary btn-cancel';
+            cancelBtn.innerHTML = '<i class="fas fa-times"></i> Отмена';
+            cancelBtn.style.marginTop = '10px';
+            cancelBtn.onclick = function() {
+                form.action = '/add-transaction/';
+                const submitBtn = form.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.textContent = 'Добавить транзакцию';
+                form.reset();
+                
+                // Устанавливаем дату из выбранного месяца
+                updateTransactionDateFromSelectedMonth();
+                cancelBtn.remove();
+            };
+            form.appendChild(cancelBtn);
+        }
+    }
+}
+
+// Обработчики для кнопок редактирования транзакций
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.edit-transaction-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const type = this.getAttribute('data-type');
+            const category = this.getAttribute('data-category');
+            const amount = this.getAttribute('data-amount');
+            const description = this.getAttribute('data-description') || '';
+            const date = this.getAttribute('data-date');
+            editTransaction(id, type, category, amount, description, date);
+        });
+    });
+    
+    document.querySelectorAll('.edit-budget-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const category = this.getAttribute('data-category');
+            const limit = this.getAttribute('data-limit');
+            const period = this.getAttribute('data-period');
+            editBudget(id, category, limit, period);
+        });
+    });
+});
+
+// Редактирование бюджета
+function editBudget(id, category, limit, period) {
+    // Заполняем форму данными бюджета
+    document.getElementById('budgetCategory').value = category;
+    document.getElementById('budgetLimit').value = limit;
+    document.getElementById('budgetPeriod').value = period;
+    
+    // Меняем форму на режим редактирования
+    const form = document.querySelector('#budgets form[action*="add-budget"]');
+    form.action = '/edit-budget/' + id + '/';
+    form.querySelector('button[type="submit"]').textContent = 'Сохранить изменения';
+    
+    // Прокручиваем к форме
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Показываем вкладку бюджетов
+    showTab('budgets');
+    
+    // Добавляем кнопку отмены
+    let cancelBtn = form.querySelector('.btn-cancel');
+    if (!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.type = 'button';
+        cancelBtn.className = 'btn btn-secondary btn-cancel';
+        cancelBtn.innerHTML = '<i class="fas fa-times"></i> Отмена';
+        cancelBtn.style.marginTop = '10px';
+        cancelBtn.onclick = function() {
+            form.action = '/add-budget/';
+            form.querySelector('button[type="submit"]').textContent = 'Создать бюджет';
+            form.reset();
+            cancelBtn.remove();
+        };
+        form.appendChild(cancelBtn);
+    }
+}
+</script>
+{% endblock %}

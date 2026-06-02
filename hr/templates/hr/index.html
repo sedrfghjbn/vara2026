@@ -1,0 +1,105 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-home"></i> Главная страница</h1>
+</div>
+
+{% if user.is_hr_manager %}
+<!-- Статистика для админов и HR -->
+<div class="stats-panel">
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-users"></i> Активных сотрудников</div>
+        <div class="stat-value balance">{{ total_employees }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-briefcase"></i> Открытых вакансий</div>
+        <div class="stat-value income">{{ total_vacancies }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-graduation-cap"></i> Обучений в процессе</div>
+        <div class="stat-value expense">{{ active_trainings }}</div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; margin-top: 40px;">
+    <div class="report-section">
+        <h3><i class="fas fa-users"></i> Последние сотрудники</h3>
+        {% if recent_employees %}
+        <div class="transactions-list">
+            {% for emp in recent_employees %}
+            <div class="transaction-card">
+                <div class="transaction-info">
+                    <div class="transaction-category">{{ emp.full_name }}</div>
+                    <div class="transaction-description">{{ emp.position.name|default:"Без должности" }} | {{ emp.department.name|default:"Без отдела" }}</div>
+                    <div class="transaction-date">{{ emp.hire_date|date:"d.m.Y" }}</div>
+                </div>
+                <a href="{% url 'hr:employee_detail' emp.id %}" class="btn btn-edit">Подробнее</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">Нет сотрудников</div>
+        {% endif %}
+    </div>
+
+    <div class="report-section">
+        <h3><i class="fas fa-briefcase"></i> Последние вакансии</h3>
+        {% if recent_vacancies %}
+        <div class="transactions-list">
+            {% for vac in recent_vacancies %}
+            <div class="transaction-card">
+                <div class="transaction-info">
+                    <div class="transaction-category">{{ vac.title }}</div>
+                    <div class="transaction-description">{{ vac.get_status_display }}</div>
+                    <div class="transaction-date">{{ vac.created_at|date:"d.m.Y" }}</div>
+                </div>
+                <a href="{% url 'hr:vacancy_detail' vac.id %}" class="btn btn-edit">Подробнее</a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">Нет вакансий</div>
+        {% endif %}
+    </div>
+</div>
+{% else %}
+<!-- Для обычных сотрудников -->
+<div class="report-section">
+    <h3><i class="fas fa-user"></i> Моя информация</h3>
+    {% if employee %}
+    <div class="transaction-card">
+        <div class="transaction-info">
+            <div class="transaction-category">{{ employee.full_name }}</div>
+            <div class="transaction-description">{{ employee.position.name|default:"Без должности" }} | {{ employee.department.name|default:"Без отдела" }}</div>
+            <div class="transaction-date">Email: {{ employee.email }} | Телефон: {{ employee.phone }}</div>
+        </div>
+        <a href="{% url 'hr:employee_detail' employee.id %}" class="btn btn-edit">Подробнее</a>
+    </div>
+    {% else %}
+    <div class="empty-state">Ваш профиль сотрудника не найден</div>
+    {% endif %}
+</div>
+
+{% if my_trainings %}
+<div class="report-section" style="margin-top: 30px;">
+    <h3><i class="fas fa-graduation-cap"></i> Моё обучение</h3>
+    <div class="transactions-list">
+        {% for training in my_trainings %}
+        <div class="transaction-card">
+            <div class="transaction-info">
+                <div class="transaction-category">{{ training.title }}</div>
+                <div class="transaction-description">{{ training.get_status_display }}</div>
+                <div class="transaction-date">{{ training.start_date|date:"d.m.Y" }} - {{ training.end_date|date:"d.m.Y" }}</div>
+            </div>
+            <a href="{% url 'hr:training_detail' training.id %}" class="btn btn-edit">Подробнее</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
+

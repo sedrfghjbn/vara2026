@@ -1,0 +1,351 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}HR Система — автоматизация HR{% endblock %}
+
+{% block content %}
+<div class="landing-hero">
+    <div class="hero-content">
+        <div class="badge">Enterprise-ready · Безопасность · Поддержка</div>
+        <h1>Автоматизируйте HR-процессы за дни, а не месяцы</h1>
+        <p>Сотрудники, вакансии, обучение, отчёты — в одной платформе. Быстрый запуск, прозрачные роли, удобные выгрузки для руководства.</p>
+        <div class="hero-ctas">
+            <a href="{% url 'hr:register' %}" class="btn btn-primary"><i class="fas fa-rocket"></i> Попробовать сейчас</a>
+            <a href="{% url 'hr:login' %}" class="btn btn-ghost"><i class="fas fa-sign-in-alt"></i> Войти</a>
+            <a href="https://t.me/varvaraezgindarova" target="_blank" rel="noopener" class="btn btn-light"><i class="fas fa-headset"></i> Связаться с разработчиком</a>
+        </div>
+        <div class="trust-bar">
+            <span><i class="fas fa-shield-alt"></i> Роли и права</span>
+            <span><i class="fas fa-lock"></i> Защита данных</span>
+            <span><i class="fas fa-file-export"></i> Экспорт CSV/XLSX/JSON</span>
+        </div>
+    </div>
+    <div class="hero-visual">
+        <div class="glass-card checklist">
+            <div class="glass-title"><i class="fas fa-magic"></i> Быстрый запуск</div>
+            <ul class="checklist-list">
+                <li><i class="fas fa-check"></i> Старт за 1 час без интеграций</li>
+                <li><i class="fas fa-check"></i> Роли и права из коробки</li>
+                <li><i class="fas fa-check"></i> Экспорт CSV/XLSX/JSON</li>
+                <li><i class="fas fa-check"></i> Поддержка разработчика</li>
+            </ul>
+            <div class="glass-footer">Подключимся и проведём демо под ваш процесс</div>
+        </div>
+    </div>
+</div>
+
+<div class="premium-section">
+    <div class="section-head">
+        <div>
+            <p class="section-kicker">Что вы получите</p>
+            <h2>Полный HR-контур в одной системе</h2>
+        </div>
+        <div class="head-cta">
+            <a href="{% url 'hr:register' %}" class="btn btn-primary btn-sm"><i class="fas fa-user-plus"></i> Старт за 1 час</a>
+        </div>
+    </div>
+    <div class="feature-grid">
+        <div class="feature-card">
+            <div class="fc-icon"><i class="fas fa-users"></i></div>
+            <h3>Управление сотрудниками</h3>
+            <p>Карточки, статусы, контакты, фото. Поиск и фильтры для живых команд.</p>
+            <span class="pill">Карточки · Статусы</span>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon green"><i class="fas fa-briefcase"></i></div>
+            <h3>Вакансии и найм</h3>
+            <p>Статусы, отчёты, выгрузки. Видимость по всем этапам найма.</p>
+            <span class="pill green">Подбор · Воронка</span>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon blue"><i class="fas fa-graduation-cap"></i></div>
+            <h3>Обучение и развитие</h3>
+            <p>Планы, участники, сертификаты. Отчёты по прогрессу и статусам.</p>
+            <span class="pill blue">L&D · Сертификаты</span>
+        </div>
+        <div class="feature-card">
+            <div class="fc-icon amber"><i class="fas fa-chart-line"></i></div>
+            <h3>Отчёты и экспорт</h3>
+            <p>CSV · XLSX · JSON за секунды. Цифры для руководства без ручной сборки.</p>
+            <span class="pill amber">Экспорт · BI-ready</span>
+        </div>
+    </div>
+</div>
+
+<div class="premium-section">
+    <div class="section-head">
+        <div>
+            <p class="section-kicker">Почему выбирают нас</p>
+            <h2>Быстрый запуск, безопасность и гибкость</h2>
+        </div>
+    </div>
+    <div class="reason-grid">
+        <div class="reason-item"><i class="fas fa-bolt"></i> Старт за 1 час: без сложной интеграции</div>
+        <div class="reason-item"><i class="fas fa-shield-alt"></i> Роли, права и защита данных</div>
+        <div class="reason-item"><i class="fas fa-sync-alt"></i> Сотрудники, найм, обучение, отчёты в одном</div>
+        <div class="reason-item"><i class="fas fa-headset"></i> Поддержка разработчика и быстрые доработки</div>
+    </div>
+    <div class="cta-bar">
+        <div>
+            <p class="section-kicker">Готовы обсудить?</p>
+            <h3>Получите демо и оцените за 15 минут</h3>
+        </div>
+        <div class="cta-actions">
+            <a href="https://t.me/varvaraezgindarova" target="_blank" rel="noopener" class="btn btn-primary"><i class="fas fa-paper-plane"></i> Запросить демо</a>
+            <a href="{% url 'hr:register' %}" class="btn btn-light"><i class="fas fa-user-plus"></i> Попробовать сейчас</a>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Локальные стили только для лендинга */
+.landing-hero {
+    display: grid;
+    grid-template-columns: 1.3fr 0.9fr;
+    gap: 28px;
+    padding: 30px;
+    background: linear-gradient(135deg, #ff7043 0%, #e64a19 100%);
+    border-radius: 16px;
+    box-shadow: 0 15px 40px rgba(230, 74, 25, 0.25);
+    color: #fff;
+    align-items: center;
+}
+.landing-hero h1 {
+    font-size: 32px;
+    margin: 10px 0 10px 0;
+    line-height: 1.2;
+}
+.landing-hero p {
+    margin: 0;
+    color: #ffece3;
+    font-size: 16px;
+}
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.15);
+    font-size: 13px;
+    letter-spacing: 0.2px;
+}
+.hero-ctas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+.btn-ghost {
+    border: 1px solid rgba(255,255,255,0.6);
+    color: #fff;
+    background: transparent;
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+.btn-ghost:hover {
+    background: rgba(255,255,255,0.1);
+}
+.btn-light {
+    background: #fff;
+    color: #d84315;
+    border: 1px solid #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+.btn-light:hover {
+    background: #ffe0d6;
+}
+.trust-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 14px;
+    font-size: 13px;
+    color: #ffece3;
+}
+.trust-bar span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.12);
+}
+.hero-visual {
+    display: flex;
+    justify-content: flex-end;
+}
+.glass-card {
+    width: 100%;
+    max-width: 340px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 14px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+}
+.glass-title {
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+.glass-metric {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 12px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+}
+.glass-metric span {
+    display: block;
+    font-size: 13px;
+    color: #ffece3;
+}
+.glass-metric strong {
+    display: block;
+    font-size: 22px;
+    margin: 4px 0;
+}
+.glass-metric small {
+    color: #ffd7c6;
+}
+.glass-footer {
+    text-align: center;
+    font-size: 13px;
+    color: #ffece3;
+    margin-top: 6px;
+}
+.checklist-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    display: grid;
+    gap: 8px;
+    color: #ffece3;
+}
+.checklist-list li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+}
+.checklist-list i {
+    color: #fff;
+    background: rgba(255,255,255,0.2);
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+.premium-section {
+    margin-top: 26px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 22px 24px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+}
+.section-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+}
+.section-kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-size: 12px;
+    color: #ff7043;
+    margin: 0 0 4px 0;
+    font-weight: 700;
+}
+.premium-section h2 {
+    margin: 0;
+}
+.head-cta .btn-sm {
+    padding: 10px 14px;
+    border-radius: 10px;
+}
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+.feature-card {
+    border: 1px solid #f4d6c7;
+    background: #fffaf6;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 18px rgba(255,112,67,0.08);
+}
+.fc-icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(255,112,67,0.12);
+    color: #ff7043;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+.fc-icon.green { background: rgba(67,160,71,0.12); color: #43a047; }
+.fc-icon.blue { background: rgba(33,150,243,0.12); color: #2196f3; }
+.fc-icon.amber { background: rgba(255,193,7,0.16); color: #f9a825; }
+.feature-card h3 { margin: 0 0 6px 0; }
+.feature-card p { margin: 0 0 8px 0; color: #4a4a4a; }
+.pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,112,67,0.14);
+    color: #c63f17;
+    font-size: 12px;
+    font-weight: 600;
+}
+.pill.green { background: rgba(67,160,71,0.14); color: #2e7d32; }
+.pill.blue { background: rgba(33,150,243,0.14); color: #1565c0; }
+.pill.amber { background: rgba(255,193,7,0.18); color: #b28704; }
+.reason-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+}
+.reason-item {
+    background: #fff6f0;
+    border: 1px solid #ffe0d0;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #3c3c3c;
+}
+.cta-bar {
+    margin-top: 18px;
+    background: linear-gradient(135deg, #ff7043 0%, #ff5722 100%);
+    color: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    box-shadow: 0 12px 28px rgba(230,74,25,0.25);
+}
+.cta-bar h3 { margin: 2px 0 0 0; }
+.cta-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+@media (max-width: 960px) {
+    .landing-hero { grid-template-columns: 1fr; }
+    .hero-visual { justify-content: flex-start; }
+}
+</style>
+{% endblock %}
+

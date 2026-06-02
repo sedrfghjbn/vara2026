@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Система автоматизации отдела кадров{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}?v=2.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Фиксированная верхняя навигация -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="{% url 'hr:index' %}" class="nav-logo">
+                <i class="fas fa-users-cog"></i> HR Система
+            </a>
+            
+            {% if user.is_authenticated %}
+            <ul class="nav-menu">
+                {% if user.is_hr_manager %}
+                <li><a href="{% url 'hr:employees_list' %}" class="{% if 'employee' in request.resolver_match.url_name %}active{% endif %}"><i class="fas fa-users"></i> Сотрудники</a></li>
+                <li><a href="{% url 'hr:vacancies_list' %}" class="{% if 'vacancy' in request.resolver_match.url_name %}active{% endif %}"><i class="fas fa-briefcase"></i> Вакансии</a></li>
+                <li><a href="{% url 'hr:trainings_list' %}" class="{% if 'training' in request.resolver_match.url_name %}active{% endif %}"><i class="fas fa-graduation-cap"></i> Обучение</a></li>
+                <li><a href="{% url 'hr:reports' %}" class="{% if 'report' in request.resolver_match.url_name %}active{% endif %}"><i class="fas fa-chart-bar"></i> Отчёты</a></li>
+                {% else %}
+                <li><a href="{% url 'hr:index' %}"><i class="fas fa-home"></i> Главная</a></li>
+                <li><a href="{% url 'hr:vacancies_list' %}" class="{% if 'vacancy' in request.resolver_match.url_name %}active{% endif %}"><i class="fas fa-briefcase"></i> Вакансии</a></li>
+                <li><a href="{% url 'hr:trainings_list' %}" class="{% if 'training' in request.resolver_match.url_name %}active{% endif %}"><i class="fas fa-graduation-cap"></i> Мои обучения</a></li>
+                {% endif %}
+                <li><a href="{% url 'hr:profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}active{% endif %}"><i class="fas fa-user-edit"></i> Профиль</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <span>
+                    <i class="fas fa-user-circle"></i>
+                    {% if user.first_name or user.last_name %}
+                        {{ user.first_name }} {{ user.last_name }}
+                    {% else %}
+                        {{ user.email|default:user.username }}
+                    {% endif %}
+                    ({{ user.get_role_display }})
+                </span>
+                <a href="{% url 'hr:logout' %}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Выйти</a>
+            </div>
+            {% else %}
+            <div class="user-menu">
+                <a href="{% url 'hr:login' %}" class="btn-login"><i class="fas fa-sign-in-alt"></i> Войти</a>
+                <a href="{% url 'hr:register' %}" class="btn-register"><i class="fas fa-user-plus"></i> Регистрация</a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    {% if user.is_authenticated %}
+    <!-- Hero баннер с приветствием -->
+    <div class="hero-banner">
+        <div class="hero-avatar">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="hero-content">
+            <div class="hero-welcome">
+                <span class="hero-greeting">
+                    Привет,
+                    <strong>
+                        {% if user.first_name or user.last_name %}
+                            {{ user.first_name }} {{ user.last_name }}
+                        {% else %}
+                            {{ user.email|default:user.username }}
+                        {% endif %}
+                    </strong>! 👋
+                </span>
+            </div>
+            <div class="hero-desc">Добро пожаловать в систему автоматизации отдела кадров. Управляйте сотрудниками, вакансиями и обучением эффективно!</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="container">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+    
+    {% load static %}
+    <script src="{% static 'js/main.js' %}"></script>
+    
+    <!-- Футер -->
+    <footer class="footer-orange">
+        <div class="footer-content">
+            <div class="footer-text">
+                <span class="footer-year">2025</span>
+                <span class="footer-separator">·</span>
+                <span class="footer-title">Система автоматизации отдела кадров</span>
+            </div>
+            <div class="footer-subtext">
+                <i class="fas fa-lightbulb"></i>
+                <span>Управление персоналом с умом</span>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
+

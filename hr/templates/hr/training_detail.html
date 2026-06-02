@@ -1,0 +1,91 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ training.title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-graduation-cap"></i> {{ training.title }}</h1>
+    {% if user.is_hr_manager %}
+    <div style="display: flex; gap: 15px; margin-top: 20px;">
+        <a href="{% url 'hr:training_edit' training.id %}" class="btn btn-edit">
+            <i class="fas fa-edit"></i> Редактировать
+        </a>
+        <a href="{% url 'hr:training_delete' training.id %}" class="btn btn-danger">
+            <i class="fas fa-trash"></i> Удалить
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="form-card">
+    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 30px;">
+        <div>
+            <span style="padding: 8px 20px; border-radius: 20px; font-size: 0.9em; font-weight: 600; background: {% if training.status == 'completed' %}#D1FAE5{% elif training.status == 'in_progress' %}#DBEAFE{% elif training.status == 'planned' %}#FEF3C7{% else %}#FEE2E2{% endif %}; color: {% if training.status == 'completed' %}#065F46{% elif training.status == 'in_progress' %}#1E40AF{% elif training.status == 'planned' %}#92400E{% else %}#991B1B{% endif %};">
+                {{ training.get_status_display }}
+            </span>
+        </div>
+        <div style="text-align: right; color: var(--text-secondary);">
+            <div>Создано: {{ training.created_at|date:"d.m.Y H:i" }}</div>
+        </div>
+    </div>
+
+    {% if training.description %}
+    <h3 class="section-title">Описание</h3>
+    <div style="padding: 20px; background: var(--bg); border-radius: 10px; margin-bottom: 30px; white-space: pre-wrap;">{{ training.description }}</div>
+    {% endif %}
+
+    <div class="form-row">
+        <div class="form-group">
+            <label>Дата начала</label>
+            <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ training.start_date|date:"d.m.Y" }}</div>
+        </div>
+        <div class="form-group">
+            <label>Дата окончания</label>
+            <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ training.end_date|date:"d.m.Y" }}</div>
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Ответственный</label>
+        <div style="padding: 14px 18px; background: var(--bg); border-radius: 10px;">{{ training.responsible.username|default:"Не указан" }}</div>
+    </div>
+</div>
+
+{% if user.is_hr_manager %}
+{% if participants %}
+<div class="form-card" style="margin-top: 30px;">
+    <h3 class="section-title">Участники ({{ participants.count }})</h3>
+    <div class="transactions-list">
+        {% for participant in participants %}
+        <div class="transaction-card">
+            <div class="transaction-info">
+                <div class="transaction-category">{{ participant.full_name }}</div>
+                <div class="transaction-description">{{ participant.position.name|default:"Без должности" }} | {{ participant.department.name|default:"Без отдела" }}</div>
+            </div>
+            <a href="{% url 'hr:employee_detail' participant.id %}" class="btn btn-edit">Подробнее</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+{% if certificates %}
+<div class="form-card" style="margin-top: 30px;">
+    <h3 class="section-title">Сертификаты ({{ certificates.count }})</h3>
+    <div class="transactions-list">
+        {% for cert in certificates %}
+        <div class="transaction-card">
+            <div class="transaction-info">
+                <div class="transaction-category">{{ cert.employee.full_name }}</div>
+                <div class="transaction-date">Выдан: {{ cert.issue_date|date:"d.m.Y" }}</div>
+            </div>
+            <a href="{{ cert.document.url }}" class="btn btn-edit" target="_blank">
+                <i class="fas fa-download"></i> Скачать
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

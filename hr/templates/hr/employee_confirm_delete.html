@@ -1,0 +1,21 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Удаление сотрудника{% endblock %}
+
+{% block content %}
+<div class="form-card">
+    <h2><i class="fas fa-exclamation-triangle"></i> Подтверждение удаления</h2>
+    <p style="font-size: 1.1em; margin-bottom: 30px;">Вы уверены, что хотите удалить сотрудника <strong>{{ employee.full_name }}</strong>?</p>
+    <p style="color: var(--text-secondary); margin-bottom: 30px;">Это действие нельзя отменить.</p>
+    <form method="post" style="display: flex; gap: 15px;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger" style="flex: 1;">
+            <i class="fas fa-trash"></i> Да, удалить
+        </button>
+        <a href="{% url 'hr:employee_detail' employee.id %}" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+            <i class="fas fa-times"></i> Отмена
+        </a>
+    </form>
+</div>
+{% endblock %}
+

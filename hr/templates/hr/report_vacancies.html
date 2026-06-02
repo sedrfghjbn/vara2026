@@ -1,0 +1,62 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Отчёт по вакансиям{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-briefcase"></i> Отчёт по вакансиям</h1>
+    <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+        <a href="{% url 'hr:report_vacancies' %}?format=csv" class="btn btn-secondary">
+            <i class="fas fa-file-csv"></i> Экспорт CSV
+        </a>
+        <a href="{% url 'hr:report_vacancies' %}?format=xlsx" class="btn btn-secondary">
+            <i class="fas fa-file-excel"></i> Экспорт XLSX
+        </a>
+        <a href="{% url 'hr:report_vacancies' %}?format=json" class="btn btn-secondary">
+            <i class="fas fa-file-code"></i> Экспорт JSON
+        </a>
+    </div>
+</div>
+
+<div class="stats-panel">
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-briefcase"></i> Открытых</div>
+        <div class="stat-value income">{{ open_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-check-circle"></i> Закрытых</div>
+        <div class="stat-value expense">{{ closed_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-archive"></i> В архиве</div>
+        <div class="stat-value balance">{{ archived_count }}</div>
+    </div>
+</div>
+
+<div class="form-card" style="max-width: 100%;">
+    <h3 class="section-title">Список вакансий</h3>
+    {% if vacancies %}
+    <div class="transactions-list">
+        {% for vacancy in vacancies %}
+        <div class="transaction-card">
+            <div class="transaction-info" style="flex: 1;">
+                <div class="transaction-category">{{ vacancy.title }}</div>
+                <div class="transaction-description">{{ vacancy.description|truncatewords:15 }}</div>
+                <div class="transaction-date">
+                    {{ vacancy.department.name|default:"Без отдела" }} | 
+                    {{ vacancy.position.name|default:"Без должности" }} | 
+                    Создана: {{ vacancy.created_at|date:"d.m.Y" }}
+                </div>
+            </div>
+            <span style="padding: 5px 15px; border-radius: 20px; font-size: 0.85em; font-weight: 600; background: {% if vacancy.status == 'open' %}#D1FAE5{% elif vacancy.status == 'closed' %}#FEE2E2{% else %}#F3F4F6{% endif %}; color: {% if vacancy.status == 'open' %}#065F46{% elif vacancy.status == 'closed' %}#991B1B{% else %}#374151{% endif %};">
+                {{ vacancy.get_status_display }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">Вакансии не найдены</div>
+    {% endif %}
+</div>
+{% endblock %}
+

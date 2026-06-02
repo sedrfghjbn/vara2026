@@ -1,0 +1,478 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-graduation-cap"></i> {{ title }}</h1>
+</div>
+
+<div class="form-card">
+    <form method="post" id="trainingForm" onsubmit="return prepareFormSubmission()">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="id_title">Название курса *</label>
+            {{ form.title }}
+        </div>
+        <div class="form-group">
+            <label for="id_description">Описание</label>
+            {{ form.description }}
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_start_date">Дата начала *</label>
+                {{ form.start_date }}
+            </div>
+            <div class="form-group">
+                <label for="id_end_date">Дата окончания *</label>
+                {{ form.end_date }}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_responsible">Ответственный</label>
+                {{ form.responsible }}
+            </div>
+            <div class="form-group">
+                <label for="id_status">Статус</label>
+                {{ form.status }}
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Участники (только сотрудники с аккаунтами)</label>
+            <div id="selected_participants_list" style="min-height: 50px; padding: 15px; background: var(--bg); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
+                <div id="no_participants" style="color: var(--text-muted); font-style: italic; text-align: center; padding: 10px;">
+                    Участники не выбраны. Нажмите кнопку "Добавить сотрудника" для выбора.
+                </div>
+            </div>
+            <button type="button" class="btn btn-edit" onclick="openParticipantsModal()" style="width: 100%;">
+                <i class="fas fa-user-plus"></i> Добавить сотрудника
+            </button>
+            <span class="form-text" style="display: block; margin-top: 10px;">Показаны только сотрудники с зарегистрированными аккаунтами.</span>
+            <div id="id_participants">
+                {% for participant in form.participants.value %}
+                    <input type="hidden" name="participants" value="{{ participant }}" />
+                {% endfor %}
+            </div>
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-save"></i> Сохранить
+            </button>
+            <a href="{% if training %}{% url 'hr:training_detail' training.id %}{% else %}{% url 'hr:trainings_list' %}{% endif %}" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-times"></i> Отмена
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Модальное окно выбора сотрудников -->
+<div id="participantsModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 800px;">
+        <div class="modal-header">
+            <h2><i class="fas fa-users"></i> Выбор участников</h2>
+            <span class="modal-close" onclick="closeParticipantsModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom: 20px; position: relative;">
+                <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); z-index: 2; pointer-events: none;">
+                    <i class="fas fa-search"></i>
+                </div>
+                <input type="text" id="employee_search" class="form-control" placeholder="Поиск по имени, фамилии, email, должности..." style="padding-left: 45px; padding-right: 15px; margin-bottom: 15px; border: 2px solid var(--border); border-radius: 10px; transition: border-color 0.3s ease; width: 100%; box-sizing: border-box;">
+            </div>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 15px;">
+                <div id="employees_list">
+                    {% for employee in available_employees %}
+                    <div class="employee-checkbox-item" data-employee-id="{{ employee.id }}" data-name="{{ employee.full_name|lower }}" data-email="{{ employee.email|lower }}" data-position="{{ employee.position.name|default:''|lower }}" data-department="{{ employee.department.name|default:''|lower }}">
+                        <label style="display: flex; align-items: center; gap: 12px; padding: 12px; cursor: pointer; border-radius: 8px; transition: background 0.2s; margin-bottom: 8px;">
+                            <input type="checkbox" 
+                                   value="{{ employee.id }}" 
+                                   class="participant-checkbox"
+                                   {% if employee.id in selected_participants %}checked{% endif %}
+                                   style="width: 20px; height: 20px; cursor: pointer;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 4px;">{{ employee.full_name }}</div>
+                                <div style="font-size: 0.9em; color: var(--text-secondary);">
+                                    {{ employee.position.name|default:"Без должности" }} | {{ employee.department.name|default:"Без отдела" }}
+                                </div>
+                                <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 2px;">{{ employee.email }}</div>
+                            </div>
+                        </label>
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fas fa-users" style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;"></i>
+                        <p>Нет доступных сотрудников с аккаунтами.</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button type="button" class="btn btn-primary" id="applyParticipantsBtn" onclick="applyParticipants()" style="flex: 1;">
+                    <i class="fas fa-check"></i> Применить
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeParticipantsModal()" style="flex: 1;">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Управление модальным окном и выбором участников
+var selectedParticipants = new Set();
+var employeesData = {}; // Хранилище данных о сотрудниках
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Сохраняем данные о всех сотрудниках в объект
+    {% for employee in available_employees %}
+    employeesData[{{ employee.id }}] = {
+        id: {{ employee.id }},
+        name: '{{ employee.full_name|escapejs }}',
+        position: '{{ employee.position.name|default:"Без должности"|escapejs }}',
+        department: '{{ employee.department.name|default:"Без отдела"|escapejs }}',
+        email: '{{ employee.email|escapejs }}'
+    };
+    {% endfor %}
+    
+    // Инициализируем выбранных участников из формы или из контекста
+    {% if selected_participants %}
+    // При редактировании - используем данные из контекста
+    {% for participant_id in selected_participants %}
+    selectedParticipants.add({{ participant_id }});
+    {% endfor %}
+    {% else %}
+    // При создании - читаем из скрытых полей формы (если есть)
+    const hiddenInputs = document.querySelectorAll('#id_participants input[type="hidden"]');
+    hiddenInputs.forEach(input => {
+        if (input.value) {
+            selectedParticipants.add(parseInt(input.value));
+        }
+    });
+    {% endif %}
+    
+    // Обновляем скрытые поля при загрузке страницы
+    updateHiddenInputs();
+    
+    // Инициализируем чекбоксы в модальном окне
+    updateCheckboxes();
+    updateParticipantsList();
+    
+    // Убеждаемся, что скрытые поля заполнены при загрузке
+    if (selectedParticipants.size > 0) {
+        updateHiddenInputs();
+    }
+    
+    // Используем делегирование событий для кнопок удаления
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-participant-btn')) {
+            e.preventDefault();
+            e.stopPropagation();
+            const btn = e.target.closest('.remove-participant-btn');
+            const employeeId = parseInt(btn.getAttribute('data-employee-id'));
+            if (!isNaN(employeeId)) {
+                removeParticipant(employeeId);
+            }
+        }
+    });
+    
+    // Поиск по сотрудникам
+    const searchInput = document.getElementById('employee_search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const items = document.querySelectorAll('.employee-checkbox-item');
+            
+            if (searchTerm === '') {
+                // Показываем все элементы
+                items.forEach(item => {
+                    item.style.display = 'block';
+                });
+            } else {
+                items.forEach(item => {
+                    const name = item.getAttribute('data-name') || '';
+                    const email = item.getAttribute('data-email') || '';
+                    const position = item.getAttribute('data-position') || '';
+                    const department = item.getAttribute('data-department') || '';
+                    const searchText = (name + ' ' + email + ' ' + position + ' ' + department).toLowerCase();
+                    
+                    if (searchText.includes(searchTerm)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+        });
+        
+        // Очистка поиска при открытии модального окна
+        searchInput.value = '';
+    }
+});
+
+function openParticipantsModal() {
+    var modal = document.getElementById('participantsModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        
+        // Очищаем поиск
+        var searchInput = document.getElementById('employee_search');
+        if (searchInput) {
+            searchInput.value = '';
+            // Показываем все элементы
+            var items = document.querySelectorAll('.employee-checkbox-item');
+            items.forEach(function(item) {
+                item.style.display = 'block';
+            });
+        }
+        
+        updateCheckboxes();
+    }
+}
+
+function closeParticipantsModal() {
+    var modal = document.getElementById('participantsModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function updateCheckboxes() {
+    var checkboxes = document.querySelectorAll('.participant-checkbox');
+    checkboxes.forEach(function(checkbox) {
+        checkbox.checked = selectedParticipants.has(parseInt(checkbox.value));
+    });
+}
+
+function applyParticipants() {
+    // Обновляем выбранных участников из чекбоксов
+    selectedParticipants.clear();
+    
+    // Ищем ВСЕ чекбоксы, включая скрытые
+    var allCheckboxes = document.querySelectorAll('.participant-checkbox');
+    
+    allCheckboxes.forEach(function(checkbox) {
+        if (checkbox.checked) {
+            var employeeId = parseInt(checkbox.value);
+            if (!isNaN(employeeId)) {
+                selectedParticipants.add(employeeId);
+            }
+        }
+    });
+    
+    // Обновляем скрытые поля формы
+    updateHiddenInputs();
+    
+    // Обновляем список выбранных участников
+    updateParticipantsList();
+    
+    // Закрываем модальное окно
+    closeParticipantsModal();
+}
+
+function updateHiddenInputs() {
+    var container = document.getElementById('id_participants');
+    if (!container) {
+        return;
+    }
+    // Удаляем все существующие скрытые поля
+    var existingInputs = container.querySelectorAll('input[type="hidden"]');
+    existingInputs.forEach(function(input) {
+        input.remove();
+    });
+    
+    // Добавляем новые скрытые поля для выбранных участников
+    selectedParticipants.forEach(function(employeeId) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'participants';
+        input.value = employeeId;
+        input.id = 'participant_' + employeeId;
+        container.appendChild(input);
+    });
+    
+    // Также обновляем видимые чекбоксы в форме (если они есть)
+    var visibleCheckboxes = document.querySelectorAll('input[name="participants"][type="checkbox"]');
+    visibleCheckboxes.forEach(function(checkbox) {
+        checkbox.checked = selectedParticipants.has(parseInt(checkbox.value));
+    });
+}
+
+function updateParticipantsList() {
+    var container = document.getElementById('selected_participants_list');
+    
+    if (!container) {
+        return;
+    }
+    
+    if (selectedParticipants.size === 0) {
+        container.innerHTML = '<div id="no_participants" style="color: var(--text-muted); font-style: italic; text-align: center; padding: 10px;">Участники не выбраны. Нажмите кнопку "Добавить сотрудника" для выбора.</div>';
+        return;
+    }
+    
+    container.innerHTML = '';
+    
+    // Получаем данные о выбранных сотрудниках из хранилища
+    var selectedItems = [];
+    selectedParticipants.forEach(function(employeeId) {
+        if (employeesData[employeeId]) {
+            var employee = employeesData[employeeId];
+            selectedItems.push({
+                id: employee.id,
+                name: employee.name,
+                info: employee.position + ' | ' + employee.department
+            });
+        }
+    });
+    
+    // Отображаем выбранных участников
+    selectedItems.forEach(function(employee) {
+        var participantCard = document.createElement('div');
+        participantCard.className = 'transaction-card';
+        participantCard.style.marginBottom = '10px';
+        participantCard.setAttribute('data-participant-id', employee.id);
+        
+        var employeeId = employee.id;
+        participantCard.innerHTML = 
+            '<div class="transaction-info" style="flex: 1;">' +
+                '<div class="transaction-category">' + escapeHtml(employee.name) + '</div>' +
+                '<div class="transaction-description">' + escapeHtml(employee.info) + '</div>' +
+            '</div>' +
+            '<button type="button" class="btn btn-danger remove-participant-btn" data-employee-id="' + employeeId + '" onclick="removeParticipant(' + employeeId + ')" style="padding: 8px 16px; font-size: 0.9em;">' +
+                '<i class="fas fa-times"></i> Удалить' +
+            '</button>';
+        container.appendChild(participantCard);
+    });
+}
+
+// Функция для экранирования HTML
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function removeParticipant(employeeId) {
+    if (employeeId && !isNaN(employeeId)) {
+        var id = parseInt(employeeId);
+        selectedParticipants.delete(id);
+        
+        // Обновляем скрытые поля
+        updateHiddenInputs();
+        
+        // Обновляем список
+        updateParticipantsList();
+        
+        // Обновляем чекбоксы в модальном окне
+        updateCheckboxes();
+    }
+}
+
+// Подготовка формы перед отправкой
+function prepareFormSubmission() {
+    // Убеждаемся, что скрытые поля обновлены перед отправкой
+    updateHiddenInputs();
+    return true; // Разрешаем отправку формы
+}
+
+// Закрытие модального окна при клике вне его
+window.onclick = function(event) {
+    const modal = document.getElementById('participantsModal');
+    if (event.target === modal) {
+        closeParticipantsModal();
+    }
+}
+</script>
+
+<style>
+.employee-checkbox-item label:hover {
+    background: rgba(234, 88, 12, 0.05);
+}
+
+.employee-checkbox-item input[type="checkbox"]:checked + div {
+    color: var(--primary);
+}
+
+#employee_search:focus {
+    outline: none;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    margin: auto;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    max-width: 700px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.4s ease;
+    position: relative;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    padding: 25px 30px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header h2 {
+    color: white;
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    color: white;
+    font-size: 2em;
+    font-weight: 300;
+    cursor: pointer;
+    line-height: 1;
+    transition: transform 0.2s ease;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-close:hover {
+    transform: rotate(90deg);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.modal-body {
+    padding: 30px;
+}
+</style>
+{% endblock %}
+

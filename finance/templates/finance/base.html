@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Семейные финансы{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- SVG волна фон сверху -->
+    <div class="wave-background">
+        <svg viewBox="0 0 1440 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#C5FAD5" d="M0,50 C500,200 950,0 1440,75 L1440,0 L0,0 Z"/>
+            <path fill="#A7F3D0" d="M0,75 C800,-80 1200,160 1440,40 L1440,0 L0,0 Z" opacity="0.6"/>
+        </svg>
+    </div>
+    
+    <!-- Фиксированная верхняя навигация -->
+    <nav class="top-nav">
+        <div class="nav-container">
+            <a href="{% url 'index' %}" class="nav-logo">
+                <i class="fas fa-wallet"></i> Семейные финансы
+            </a>
+            
+            {% if user.is_authenticated %}
+            <ul class="nav-menu">
+                <li><a href="{% url 'index' %}" class="{% if request.resolver_match.url_name == 'index' %}active{% endif %}"><i class="fas fa-exchange-alt"></i> Транзакции</a></li>
+                <li><a href="{% url 'index' %}#budgets" onclick="showTab('budgets'); return false;"><i class="fas fa-chart-pie"></i> Бюджеты</a></li>
+                <li><a href="{% url 'index' %}#goals" onclick="showTab('goals'); return false;"><i class="fas fa-bullseye"></i> Цели</a></li>
+                <li><a href="{% url 'report' %}" class="{% if request.resolver_match.url_name == 'report' %}active{% endif %}"><i class="fas fa-chart-line"></i> Отчеты</a></li>
+                <li><a href="#" onclick="openCategoryModal(); return false;"><i class="fas fa-tags"></i> Категории</a></li>
+            </ul>
+            
+            <div class="user-menu">
+                <span><i class="fas fa-user-circle"></i> {{ user.username }}</span>
+                <a href="{% url 'logout' %}" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Выйти</a>
+            </div>
+            {% else %}
+            <div class="user-menu">
+                <a href="{% url 'login' %}" class="btn-login"><i class="fas fa-sign-in-alt"></i> Войти</a>
+                <a href="{% url 'register' %}" class="btn-register"><i class="fas fa-user-plus"></i> Регистрация</a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    {% if user.is_authenticated %}
+    <!-- Hero баннер с приветствием -->
+    <div class="hero-banner">
+        <div class="hero-avatar">🍀</div>
+        <div class="hero-content">
+            <div class="hero-welcome">Привет, <strong>{{ user.username }}</strong>! 👋</div>
+            <div class="hero-desc">Управляйте семейным бюджетом легко и с удовольствием. Отслеживайте доходы, контролируйте расходы и достигайте финансовых целей!</div>
+        </div>
+        <div class="hero-decoration">
+            <div class="decoration-circle circle-1"></div>
+            <div class="decoration-circle circle-2"></div>
+            <div class="decoration-circle circle-3"></div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="container">
+        {% if user.is_authenticated and months %}
+        <!-- Выбор периода -->
+        <div class="period-selector">
+            <form method="get" action="{% if request.resolver_match.url_name == 'report' %}{% url 'report' %}{% else %}{% url 'index' %}{% endif %}" style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label style="font-weight: 600; color: var(--text-primary); font-size: 1.1em;">
+                        <i class="fas fa-calendar-alt"></i> Период:
+                    </label>
+                    <select name="month" id="monthSelect" style="padding: 10px 15px; border: 2px solid var(--border); border-radius: 10px; font-size: 1em; font-weight: 600; background: white; min-width: 200px;">
+                        {% for month_item in months %}
+                            <option value="{{ month_item.month }}" data-year="{{ month_item.year }}" 
+                                {% if month_item.month == selected_month and month_item.year == selected_year %}selected{% endif %}>
+                                {{ month_item.label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="year" id="yearInput" value="{{ selected_year }}">
+                </div>
+                {% if request.GET.filter_type or request.GET.filter_category %}
+                    <input type="hidden" name="filter_type" value="{{ request.GET.filter_type }}">
+                    <input type="hidden" name="filter_category" value="{{ request.GET.filter_category }}">
+                {% endif %}
+            </form>
+        </div>
+        
+        <!-- Панель показателей -->
+        <div class="stats-panel">
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-arrow-up"></i> Доходы за месяц</div>
+                <div class="stat-value income">{{ total_income|floatformat:0 }} ₽</div>
+                {% if selected_month and selected_year %}
+                    <div style="font-size: 0.75em; color: var(--text-muted); margin-top: 5px;">
+                        {% load l10n %}
+                        {% with month_num=selected_month %}
+                            {% if month_num == 1 %}Январь{% elif month_num == 2 %}Февраль{% elif month_num == 3 %}Март{% elif month_num == 4 %}Апрель{% elif month_num == 5 %}Май{% elif month_num == 6 %}Июнь{% elif month_num == 7 %}Июль{% elif month_num == 8 %}Август{% elif month_num == 9 %}Сентябрь{% elif month_num == 10 %}Октябрь{% elif month_num == 11 %}Ноябрь{% elif month_num == 12 %}Декабрь{% endif %} {{ selected_year }}
+                        {% endwith %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-arrow-down"></i> Расходы за месяц</div>
+                <div class="stat-value expense">{{ total_expense|floatformat:0 }} ₽</div>
+                {% if selected_month and selected_year %}
+                    <div style="font-size: 0.75em; color: var(--text-muted); margin-top: 5px;">
+                        {% with month_num=selected_month %}
+                            {% if month_num == 1 %}Январь{% elif month_num == 2 %}Февраль{% elif month_num == 3 %}Март{% elif month_num == 4 %}Апрель{% elif month_num == 5 %}Май{% elif month_num == 6 %}Июнь{% elif month_num == 7 %}Июль{% elif month_num == 8 %}Август{% elif month_num == 9 %}Сентябрь{% elif month_num == 10 %}Октябрь{% elif month_num == 11 %}Ноябрь{% elif month_num == 12 %}Декабрь{% endif %} {{ selected_year }}
+                        {% endwith %}
+                    </div>
+                {% endif %}
+            </div>
+            <div class="stat-card">
+                <div class="stat-label"><i class="fas fa-balance-scale"></i> Баланс</div>
+                <div class="stat-value balance">{{ balance|floatformat:0 }} ₽</div>
+                {% if selected_month and selected_year %}
+                    <div style="font-size: 0.75em; color: var(--text-muted); margin-top: 5px;">
+                        Накоплено до конца
+                    </div>
+                    <div style="font-size: 0.75em; color: var(--text-muted);">
+                        {% with month_num=selected_month %}
+                            {% if month_num == 1 %}Январь{% elif month_num == 2 %}Февраль{% elif month_num == 3 %}Март{% elif month_num == 4 %}Апрель{% elif month_num == 5 %}Май{% elif month_num == 6 %}Июнь{% elif month_num == 7 %}Июль{% elif month_num == 8 %}Август{% elif month_num == 9 %}Сентябрь{% elif month_num == 10 %}Октябрь{% elif month_num == 11 %}Ноябрь{% elif month_num == 12 %}Декабрь{% endif %} {{ selected_year }}
+                        {% endwith %}
+                    </div>
+                {% else %}
+                    <div style="font-size: 0.75em; color: var(--text-muted); margin-top: 5px;">
+                        Накопленный
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    {% load static %}
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(function(tab) {
+            tab.classList.remove('active');
+            tab.style.display = 'none';
+        });
+        const targetTab = document.getElementById(tabName);
+        if (targetTab) {
+            targetTab.classList.add('active');
+            targetTab.style.display = 'block';
+        }
+        
+        // Обновление активной кнопки в навигации
+        document.querySelectorAll('.nav-menu a').forEach(function(link) {
+            link.classList.remove('active');
+        });
+    }
+    
+    // Обновление года при выборе месяца и автоматическая отправка формы
+    document.addEventListener('DOMContentLoaded', function() {
+        const monthSelect = document.getElementById('monthSelect');
+        if (monthSelect) {
+            monthSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const year = selectedOption.getAttribute('data-year');
+                if (year) {
+                    const yearInput = document.getElementById('yearInput');
+                    if (yearInput) {
+                        yearInput.value = year;
+                    }
+                }
+                
+                // Автоматически отправляем форму при выборе месяца
+                if (this.form) {
+                    this.form.submit();
+                }
+            });
+        }
+    });
+    </script>
+    
+    <!-- Футер -->
+    <footer class="footer-green">
+        <div class="footer-content">
+            <div class="footer-text">2025 · Семейные финансы</div>
+            <div class="footer-subtext">Управляйте деньгами с удовольствием 🌱</div>
+        </div>
+    </footer>
+    
+    <style>
+    /* SVG волна фон */
+    .wave-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 200px;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    .wave-background svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+    
+    /* Hero баннер */
+    .hero-banner {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 30px;
+        padding: 50px 30px 40px;
+        max-width: 1200px;
+        margin: 20px auto 30px;
+        z-index: 1;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 255, 250, 0.98) 100%);
+        border-radius: 24px;
+        box-shadow: 0 10px 40px rgba(22, 163, 74, 0.15);
+        backdrop-filter: blur(10px);
+        overflow: hidden;
+    }
+    
+    .hero-avatar {
+        font-size: 4em;
+        background: linear-gradient(135deg, #6EE7B7 0%, #16A34A 100%);
+        border-radius: 50%;
+        box-shadow: 0 8px 30px rgba(22, 163, 74, 0.3);
+        width: 90px;
+        height: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .hero-content {
+        flex: 1;
+        z-index: 2;
+    }
+    
+    .hero-welcome {
+        font-size: 1.8em;
+        font-weight: 800;
+        background: linear-gradient(135deg, #11743E 0%, #16A34A 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 12px;
+        line-height: 1.3;
+    }
+    
+    .hero-desc {
+        color: #4ADE80;
+        font-size: 1.05em;
+        line-height: 1.7;
+        font-weight: 500;
+        letter-spacing: 0.2px;
+        opacity: 0.9;
+    }
+    
+    .hero-decoration {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+    }
+    
+    .decoration-circle {
+        position: absolute;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(22, 163, 74, 0.1) 0%, rgba(78, 222, 128, 0.1) 100%);
+        animation: pulse 4s ease-in-out infinite;
+    }
+    
+    .circle-1 {
+        width: 200px;
+        height: 200px;
+        top: -50px;
+        right: -50px;
+        animation-delay: 0s;
+    }
+    
+    .circle-2 {
+        width: 150px;
+        height: 150px;
+        bottom: -30px;
+        right: 100px;
+        animation-delay: 1s;
+    }
+    
+    .circle-3 {
+        width: 100px;
+        height: 100px;
+        top: 50%;
+        right: 200px;
+        animation-delay: 2s;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.2); opacity: 0.3; }
+    }
+    
+    /* Футер */
+    .footer-green {
+        background: linear-gradient(135deg, #BBF7D0 0%, #A7F3D0 50%, #86EFAC 100%);
+        color: #15803D;
+        text-align: center;
+        padding: 40px 20px 30px;
+        margin-top: 80px;
+        border-top-left-radius: 40px;
+        border-top-right-radius: 40px;
+        box-shadow: 0 -10px 40px rgba(22, 163, 74, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .footer-green::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #16A34A 0%, #4ADE80 50%, #16A34A 100%);
+    }
+    
+    .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .footer-text {
+        font-size: 1.2em;
+        font-weight: 700;
+        margin-bottom: 8px;
+        letter-spacing: 0.5px;
+    }
+    
+    .footer-subtext {
+        font-size: 1em;
+        font-weight: 500;
+        opacity: 0.9;
+    }
+    
+    /* Адаптивность */
+    @media (max-width: 900px) {
+        .hero-banner {
+            padding: 35px 20px 30px;
+            gap: 20px;
+        }
+        .hero-avatar {
+            width: 70px;
+            height: 70px;
+            font-size: 3em;
+        }
+        .hero-welcome {
+            font-size: 1.5em;
+        }
+        .hero-desc {
+            font-size: 0.95em;
+        }
+    }
+    
+    @media (max-width: 600px) {
+        .hero-banner {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 30px 20px 25px;
+        }
+        .hero-avatar {
+            width: 60px;
+            height: 60px;
+            font-size: 2.5em;
+        }
+        .hero-welcome {
+            font-size: 1.3em;
+        }
+        .hero-desc {
+            font-size: 0.9em;
+        }
+        .decoration-circle {
+            display: none;
+        }
+    }
+    </style>
+</body>
+</html>

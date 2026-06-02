@@ -1,0 +1,581 @@
+{% extends 'finance/base.html' %}
+
+{% block content %}
+<div class="tab-content active" id="reports">
+    <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-chart-line"></i> Финансовые отчеты</h1>
+        <div class="page-subtitle">Детальный анализ ваших финансов за {{ month_name }} {{ selected_year }}</div>
+    </div>
+
+    <!-- Общая статистика -->
+    <div class="report-stats-grid">
+        <div class="report-stat-card income-stat">
+            <div class="stat-icon"><i class="fas fa-arrow-up"></i></div>
+            <div class="stat-content">
+                <div class="stat-label">Общий доход</div>
+                <div class="stat-value">{{ total_income|floatformat:0 }} ₽</div>
+                <div class="stat-count">{{ income_count }} транзакций</div>
+            </div>
+        </div>
+        
+        <div class="report-stat-card expense-stat">
+            <div class="stat-icon"><i class="fas fa-arrow-down"></i></div>
+            <div class="stat-content">
+                <div class="stat-label">Общий расход</div>
+                <div class="stat-value">{{ total_expense|floatformat:0 }} ₽</div>
+                <div class="stat-count">{{ expense_count }} транзакций</div>
+            </div>
+        </div>
+        
+        <div class="report-stat-card balance-stat">
+            <div class="stat-icon"><i class="fas fa-balance-scale"></i></div>
+            <div class="stat-content">
+                <div class="stat-label">Баланс</div>
+                <div class="stat-value {% if balance >= 0 %}positive{% else %}negative{% endif %}">
+                    {{ balance|floatformat:0 }} ₽
+                </div>
+                <div class="stat-detail">
+                    <i class="fas fa-info-circle"></i> За {{ days_count }} дней
+                </div>
+                <div class="stat-percentage">
+                    {% if total_income > 0 %}
+                        {% widthratio total_expense total_income 100 %}% от дохода потрачено
+                    {% else %}
+                        Нет доходов
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Топ категории -->
+    <div class="report-grid">
+        <div class="report-card">
+            <div class="report-card-header">
+                <h3><i class="fas fa-trophy"></i> Топ-5 категорий расходов</h3>
+            </div>
+            <div class="report-card-body">
+                {% if top_expenses %}
+                    <div class="category-list">
+                        {% for expense in top_expenses %}
+                        <div class="category-item">
+                            <div class="category-info">
+                                <span class="category-name">{{ expense.category }}</span>
+                                <span class="category-percentage">
+                                    {% if max_expense > 0 %}
+                                        {% widthratio expense.total max_expense 100 %}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="category-bar-container">
+                                <div class="category-bar" style="width: {% if max_expense > 0 %}{% widthratio expense.total max_expense 100 %}{% else %}0{% endif %}%"></div>
+                            </div>
+                            <div class="category-amount">{{ expense.total|floatformat:0 }} ₽</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">Нет данных за выбранный период</div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="report-card">
+            <div class="report-card-header">
+                <h3><i class="fas fa-star"></i> Топ-5 категорий доходов</h3>
+            </div>
+            <div class="report-card-body">
+                {% if top_income %}
+                    <div class="category-list">
+                        {% for income in top_income %}
+                        <div class="category-item income-item">
+                            <div class="category-info">
+                                <span class="category-name">{{ income.category }}</span>
+                            </div>
+                            <div class="category-bar-container income-bar">
+                                <div class="category-bar income-bar-fill" style="width: {% if total_income > 0 %}{% widthratio income.total total_income 100 %}{% else %}0{% endif %}%"></div>
+                            </div>
+                            <div class="category-amount income-amount">{{ income.total|floatformat:0 }} ₽</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="empty-state">Нет данных за выбранный период</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Расходы по категориям (детально) -->
+    <div class="report-card full-width">
+        <div class="report-card-header">
+            <h3><i class="fas fa-chart-pie"></i> Расходы по категориям</h3>
+        </div>
+        <div class="report-card-body">
+            {% if expenses %}
+                <div class="expenses-table">
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Категория</th>
+                                <th>Сумма</th>
+                                <th>Доля</th>
+                                <th>Прогресс</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for expense in expenses %}
+                            <tr>
+                                <td><strong>{{ expense.category }}</strong></td>
+                                <td class="amount-cell">{{ expense.total|floatformat:0 }} ₽</td>
+                                <td class="percentage-cell">
+                                    {% if total_expense > 0 %}
+                                        {% widthratio expense.total total_expense 100 %}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar" style="width: {% if total_expense > 0 %}{% widthratio expense.total total_expense 100 %}{% else %}0{% endif %}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td><strong>Итого</strong></td>
+                                <td class="amount-cell"><strong>{{ total_expense|floatformat:0 }} ₽</strong></td>
+                                <td><strong>100%</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state">Нет данных за выбранный период</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Динамика доходов и расходов -->
+    <div class="report-card full-width">
+        <div class="report-card-header">
+            <h3><i class="fas fa-chart-area"></i> Динамика доходов и расходов по дням</h3>
+        </div>
+        <div class="report-card-body">
+            {% if income_expense_data %}
+                <div class="timeline-chart">
+                    {% for date, data in income_expense_data.items %}
+                    <div class="timeline-item">
+                        <div class="timeline-date">{{ date|date:"d.m.Y" }}</div>
+                        <div class="timeline-bars">
+                            {% if data.income > 0 %}
+                            <div class="timeline-bar income-bar" style="width: {% if total_income > 0 %}{% widthratio data.income total_income 50 %}{% else %}0{% endif %}%">
+                                <span class="bar-label">+{{ data.income|floatformat:0 }} ₽</span>
+                            </div>
+                            {% endif %}
+                            {% if data.expense > 0 %}
+                            <div class="timeline-bar expense-bar" style="width: {% if total_expense > 0 %}{% widthratio data.expense total_expense 50 %}{% else %}0{% endif %}%">
+                                <span class="bar-label">-{{ data.expense|floatformat:0 }} ₽</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="timeline-balance">
+                            {% if data.income > 0 or data.expense > 0 %}
+                                {{ data.income|add:data.expense|floatformat:0 }} ₽
+                            {% else %}
+                                —
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state">Нет данных за выбранный период</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.report-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.report-stat-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 30px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.report-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-xl);
+}
+
+.report-stat-card.income-stat {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
+}
+
+.report-stat-card.expense-stat {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(239, 68, 68, 0.02) 100%);
+}
+
+.report-stat-card.balance-stat {
+    border-color: rgba(59, 130, 246, 0.3);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
+}
+
+.stat-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+    flex-shrink: 0;
+}
+
+.income-stat .stat-icon {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+}
+
+.expense-stat .stat-icon {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.balance-stat .stat-icon {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stat-value {
+    font-size: 2.2em;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    line-height: 1;
+}
+
+.stat-value.positive {
+    color: #22c55e;
+}
+
+.stat-value.negative {
+    color: #ef4444;
+}
+
+.stat-detail {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stat-count {
+    font-size: 0.85em;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.stat-percentage {
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    font-weight: 600;
+}
+
+.report-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.report-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.report-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-xl);
+}
+
+.report-card.full-width {
+    grid-column: 1 / -1;
+    margin-bottom: 30px;
+}
+
+.report-card-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    padding: 20px 30px;
+    border-bottom: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.report-card-header h3 {
+    color: white;
+    font-size: 1.3em;
+    font-weight: 700;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.report-card-body {
+    padding: 30px;
+}
+
+.category-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.category-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.category-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.category-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 1.05em;
+}
+
+.category-percentage {
+    font-size: 0.9em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.category-bar-container {
+    height: 12px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+}
+
+.category-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.category-item.income-item .category-bar-container {
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.category-item.income-item .category-bar {
+    background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+}
+
+.category-amount {
+    font-size: 1.1em;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: right;
+}
+
+.category-amount.income-amount {
+    color: #22c55e;
+}
+
+.report-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.report-table thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    color: white;
+}
+
+.report-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.95em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.report-table td {
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+}
+
+.report-table tbody tr:hover {
+    background: rgba(22, 163, 74, 0.05);
+}
+
+.report-table tfoot {
+    background: rgba(22, 163, 74, 0.1);
+    font-weight: 700;
+}
+
+.amount-cell {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1.1em;
+}
+
+.percentage-cell {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+    border-radius: 10px;
+    transition: width 0.5s ease;
+}
+
+.timeline-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.timeline-item {
+    display: grid;
+    grid-template-columns: 120px 1fr 120px;
+    gap: 15px;
+    align-items: center;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+.timeline-item:hover {
+    background: rgba(22, 163, 74, 0.05);
+}
+
+.timeline-date {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.95em;
+}
+
+.timeline-bars {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    height: 40px;
+}
+
+.timeline-bar {
+    height: 30px;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.timeline-bar.income-bar {
+    background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
+}
+
+.timeline-bar.expense-bar {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+
+.bar-label {
+    color: white;
+    font-size: 0.85em;
+    font-weight: 700;
+    white-space: nowrap;
+    padding: 0 8px;
+}
+
+.timeline-balance {
+    text-align: right;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 1.05em;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+    font-size: 1.1em;
+}
+
+@media (max-width: 768px) {
+    .report-stats-grid,
+    .report-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .timeline-item {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .timeline-date,
+    .timeline-balance {
+        text-align: left;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,572 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-user"></i> {{ title }}</h1>
+</div>
+
+<div class="form-card">
+    <form method="post" enctype="multipart/form-data" id="employeeForm" onsubmit="return validateForm()">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+            <div class="alert alert-error" style="margin-bottom: 20px;">
+                <strong>Ошибки в форме:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <li><strong>{{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        
+        {% if form.non_field_errors %}
+            <div class="alert alert-error" style="margin-bottom: 20px;">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_first_name">Имя *</label>
+                {{ form.first_name }}
+                {% if form.first_name.errors %}
+                    {% for error in form.first_name.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_last_name">Фамилия *</label>
+                {{ form.last_name }}
+                {% if form.last_name.errors %}
+                    {% for error in form.last_name.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="id_middle_name">Отчество</label>
+            {{ form.middle_name }}
+        </div>
+        <div class="form-group">
+            <label>Пользователь (аккаунт) *</label>
+            <div id="selected_user_display" style="min-height: 50px; padding: 15px; background: var(--bg); border-radius: 10px; margin-bottom: 10px; border: 1px solid var(--border);">
+                <div id="no_user_selected" style="color: var(--text-muted); font-style: italic; text-align: center; padding: 10px;">
+                    Пользователь не выбран. Нажмите кнопку "Выбрать аккаунт" для выбора.
+                </div>
+            </div>
+            <button type="button" class="btn btn-edit" onclick="openUserModal()" style="width: 100%;">
+                <i class="fas fa-user-plus"></i> Выбрать аккаунт
+            </button>
+            <span class="form-text" style="display: block; margin-top: 10px;">Выберите зарегистрированного пользователя. Данные будут автоматически заполнены из аккаунта.</span>
+            {{ form.user }}
+            {% if form.user.errors %}
+                {% for error in form.user.errors %}
+                    <span class="error">{{ error }}</span>
+                {% endfor %}
+            {% endif %}
+        </div>
+        <div class="form-row">
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_date_of_birth">Дата рождения *</label>
+                {{ form.date_of_birth }}
+                {% if form.date_of_birth.errors %}
+                    {% for error in form.date_of_birth.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_hire_date">Дата приема *</label>
+                {{ form.hire_date }}
+                {% if form.hire_date.errors %}
+                    {% for error in form.hire_date.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_email">Email *</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    {% for error in form.email.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_phone">Телефон *</label>
+                {{ form.phone }}
+                {% if form.phone.errors %}
+                    {% for error in form.phone.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_position">Должность</label>
+                {{ form.position }}
+                {% if form.position.errors %}
+                    {% for error in form.position.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                <label for="id_department">Отдел</label>
+                {{ form.department }}
+                {% if form.department.errors %}
+                    {% for error in form.department.errors %}
+                        <span class="error">{{ error }}</span>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="id_status">Статус</label>
+                {{ form.status }}
+            </div>
+            <div class="form-group">
+                <label for="id_photo">Фото</label>
+                {{ form.photo }}
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="id_note">Заметка</label>
+            {{ form.note }}
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-save"></i> Сохранить
+            </button>
+            <a href="{% if employee %}{% url 'hr:employee_detail' employee.id %}{% else %}{% url 'hr:employees_list' %}{% endif %}" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-times"></i> Отмена
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Модальное окно выбора пользователя -->
+<div id="userModal" class="modal" style="display: none;">
+    <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-header">
+            <h2><i class="fas fa-user"></i> Выбор аккаунта</h2>
+            <span class="modal-close" onclick="closeUserModal()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <div style="margin-bottom: 20px; position: relative;">
+                <div style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-muted); z-index: 2; pointer-events: none;">
+                    <i class="fas fa-search"></i>
+                </div>
+                <input type="text" id="user_search" class="form-control" placeholder="Поиск по имени, фамилии, email, username..." style="padding-left: 45px; padding-right: 15px; margin-bottom: 15px; border: 2px solid var(--border); border-radius: 10px; transition: border-color 0.3s ease; width: 100%; box-sizing: border-box;">
+            </div>
+            <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; padding: 15px;">
+                <div id="users_list">
+                    {% for user in available_users %}
+                    <div class="user-item" 
+                         data-user-id="{{ user.id }}" 
+                         data-username="{{ user.username|lower }}" 
+                         data-first-name="{{ user.first_name|lower|default:'' }}" 
+                         data-last-name="{{ user.last_name|lower|default:'' }}" 
+                         data-middle-name="{{ user.middle_name|lower|default:'' }}" 
+                         data-date-of-birth="{{ user.date_of_birth|date:'Y-m-d' }}"
+                         data-email="{{ user.email|lower }}"
+                         data-phone="{{ user.phone|default:'' }}"
+                         onclick="selectUserFromElement(this)"
+                         style="padding: 15px; cursor: pointer; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border); transition: all 0.2s ease; background: white;">
+                        <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 5px;">{{ user.username }}</div>
+                        <div style="font-size: 0.9em; color: var(--text-secondary); margin-bottom: 3px;">
+                            {% if user.first_name or user.last_name %}
+                                {{ user.first_name }} {{ user.last_name }}
+                            {% else %}
+                                Имя не указано
+                            {% endif %}
+                        </div>
+                        <div style="font-size: 0.85em; color: var(--text-muted);">{{ user.email }}</div>
+                        {% if user.phone %}
+                        <div style="font-size: 0.85em; color: var(--text-muted); margin-top: 2px;">{{ user.phone }}</div>
+                        {% endif %}
+                    </div>
+                    {% empty %}
+                    <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fas fa-users" style="font-size: 3em; margin-bottom: 15px; opacity: 0.5;"></i>
+                        <p>Нет доступных пользователей с ролью "Обычный сотрудник".</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button type="button" class="btn btn-secondary" onclick="closeUserModal()" style="flex: 1;">
+                    <i class="fas fa-times"></i> Отмена
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+var selectedUserData = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // При редактировании — только показать привязанный аккаунт, не затирать поля карточки
+    {% if employee and selected_user_id %}
+    initEditModeLinkedUser({{ selected_user_id }});
+    {% elif selected_user_id %}
+    var userId = {{ selected_user_id }};
+    var userItem = document.querySelector('.user-item[data-user-id="' + userId + '"]');
+    if (userItem) {
+        selectUserFromElement(userItem);
+    }
+    {% endif %}
+    
+    // Поиск по пользователям
+    var searchInput = document.getElementById('user_search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            var searchTerm = this.value.toLowerCase().trim();
+            var items = document.querySelectorAll('.user-item');
+            
+            if (searchTerm === '') {
+                items.forEach(function(item) {
+                    item.style.display = 'block';
+                });
+            } else {
+                items.forEach(function(item) {
+                    var username = item.getAttribute('data-username') || '';
+                    var firstName = item.getAttribute('data-first-name') || '';
+                    var lastName = item.getAttribute('data-last-name') || '';
+                    var email = item.getAttribute('data-email') || '';
+                    var searchText = (username + ' ' + firstName + ' ' + lastName + ' ' + email).toLowerCase();
+                    
+                    if (searchText.includes(searchTerm)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            }
+        });
+    }
+    
+    // Hover эффект для элементов пользователей
+    document.querySelectorAll('.user-item').forEach(function(item) {
+        item.addEventListener('mouseenter', function() {
+            this.style.background = 'rgba(234, 88, 12, 0.05)';
+            this.style.borderColor = 'var(--primary)';
+        });
+        item.addEventListener('mouseleave', function() {
+            this.style.background = 'white';
+            this.style.borderColor = 'var(--border)';
+        });
+    });
+});
+
+function openUserModal() {
+    var modal = document.getElementById('userModal');
+    if (modal) {
+        modal.style.display = 'flex';
+        
+        // Очищаем поиск
+        var searchInput = document.getElementById('user_search');
+        if (searchInput) {
+            searchInput.value = '';
+            // Показываем все элементы
+            var items = document.querySelectorAll('.user-item');
+            items.forEach(function(item) {
+                item.style.display = 'block';
+            });
+        }
+    }
+}
+
+function closeUserModal() {
+    var modal = document.getElementById('userModal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+/** Редактирование: блок «аккаунт» без перезаписи ФИО/email из User */
+function initEditModeLinkedUser(userId) {
+    var userItem = document.querySelector('.user-item[data-user-id="' + userId + '"]');
+    var username = userItem
+        ? userItem.querySelector('div:first-child').textContent.trim()
+        : '';
+
+    var firstNameEl = document.getElementById('id_first_name');
+    var lastNameEl = document.getElementById('id_last_name');
+    var middleNameEl = document.getElementById('id_middle_name');
+    var emailEl = document.getElementById('id_email');
+    var phoneEl = document.getElementById('id_phone');
+    var dobEl = document.getElementById('id_date_of_birth');
+
+    selectedUserData = {
+        id: userId,
+        username: username || String(userId),
+        firstName: firstNameEl ? firstNameEl.value : '',
+        lastName: lastNameEl ? lastNameEl.value : '',
+        middleName: middleNameEl ? middleNameEl.value : '',
+        dob: dobEl ? dobEl.value : '',
+        email: emailEl ? emailEl.value : '',
+        phone: phoneEl ? phoneEl.value : '',
+    };
+
+    var hiddenInput = document.getElementById('id_user');
+    if (hiddenInput) {
+        hiddenInput.value = userId;
+    }
+    updateUserDisplay();
+}
+
+function selectUserFromElement(element) {
+    var userId = parseInt(element.getAttribute('data-user-id'));
+    var username = element.querySelector('div:first-child').textContent.trim();
+    var nameText = element.querySelector('div:nth-child(2)').textContent.trim();
+    var email = element.querySelector('div:nth-child(3)').textContent.trim();
+    var phoneElement = element.querySelector('div:nth-child(4)');
+    var phone = phoneElement ? phoneElement.textContent.trim() : '';
+    var middleName = element.getAttribute('data-middle-name') || '';
+    var dob = element.getAttribute('data-date-of-birth') || '';
+    
+    // Разделяем имя и фамилию
+    var nameParts = nameText.split(' ').filter(function(part) { return part.trim() !== ''; });
+    var firstName = nameParts[0] || '';
+    var lastName = nameParts.slice(1).join(' ') || '';
+    
+    // Если имя не указано, используем username
+    if (!firstName && !lastName) {
+        firstName = username;
+    }
+    
+    var overwriteFormFields = {% if employee %}false{% else %}true{% endif %};
+    selectUser(userId, username, firstName, lastName, middleName, dob, email, phone, overwriteFormFields);
+}
+
+function selectUser(userId, username, firstName, lastName, middleName, dob, email, phone, overwriteFormFields) {
+    if (overwriteFormFields === undefined) {
+        overwriteFormFields = false;
+    }
+    // Сохраняем выбранного пользователя
+    selectedUserData = {
+        id: userId,
+        username: username,
+        firstName: firstName,
+        lastName: lastName,
+        middleName: middleName,
+        dob: dob,
+        email: email,
+        phone: phone || ''
+    };
+    
+    // Обновляем скрытое поле
+    var hiddenInput = document.getElementById('id_user');
+    if (hiddenInput) {
+        hiddenInput.value = userId;
+    }
+    
+    // Обновляем отображение
+    updateUserDisplay();
+    
+    // При создании карточки — подставляем данные из аккаунта; при редактировании — только по явному выбору
+    if (overwriteFormFields) {
+        var firstNameInput = document.getElementById('id_first_name');
+        if (firstNameInput) {
+            firstNameInput.value = firstName || '';
+        }
+
+        var lastNameInput = document.getElementById('id_last_name');
+        if (lastNameInput) {
+            lastNameInput.value = lastName || '';
+        }
+
+        var middleNameInput = document.getElementById('id_middle_name');
+        if (middleNameInput) {
+            middleNameInput.value = middleName || '';
+        }
+
+        var dobInput = document.getElementById('id_date_of_birth');
+        if (dobInput) {
+            dobInput.value = dob || '';
+        }
+
+        var emailInput = document.getElementById('id_email');
+        if (emailInput) {
+            emailInput.value = email || '';
+        }
+
+        var phoneInput = document.getElementById('id_phone');
+        if (phoneInput) {
+            phoneInput.value = phone || '+7(';
+        }
+    }
+
+    closeUserModal();
+}
+
+function updateUserDisplay() {
+    var container = document.getElementById('selected_user_display');
+    if (!container) {
+        return;
+    }
+    
+    if (!selectedUserData) {
+        container.innerHTML = '<div id="no_user_selected" style="color: var(--text-muted); font-style: italic; text-align: center; padding: 10px;">Пользователь не выбран. Нажмите кнопку "Выбрать аккаунт" для выбора.</div>';
+        return;
+    }
+    
+    var fullName = (selectedUserData.firstName + ' ' + selectedUserData.lastName).trim() || selectedUserData.username;
+    container.innerHTML = 
+        '<div class="transaction-card" style="margin-bottom: 0;">' +
+            '<div class="transaction-info" style="flex: 1;">' +
+                '<div class="transaction-category">' + escapeHtml(selectedUserData.username) + '</div>' +
+                '<div class="transaction-description">' + escapeHtml(fullName) + '</div>' +
+                '<div style="font-size: 0.85em; color: var(--text-muted); margin-top: 4px;">' + escapeHtml(selectedUserData.email) + '</div>' +
+            '</div>' +
+            '<button type="button" class="btn btn-danger" onclick="clearUser()" style="padding: 8px 16px; font-size: 0.9em;">' +
+                '<i class="fas fa-times"></i> Очистить' +
+            '</button>' +
+        '</div>';
+}
+
+function clearUser() {
+    selectedUserData = null;
+    var hiddenInput = document.getElementById('id_user');
+    if (hiddenInput) {
+        hiddenInput.value = '';
+    }
+    updateUserDisplay();
+}
+
+function escapeHtml(text) {
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// Закрытие модального окна при клике вне его
+window.onclick = function(event) {
+    var modal = document.getElementById('userModal');
+    if (event.target === modal) {
+        closeUserModal();
+    }
+}
+
+// Валидация формы перед отправкой
+function validateForm() {
+    var userInput = document.getElementById('id_user');
+    if (!userInput || !userInput.value) {
+        alert('Пожалуйста, выберите пользователя (аккаунт) перед сохранением!');
+        // Прокручиваем к блоку выбора пользователя
+        var userBlock = document.querySelector('[for="id_user"]') || document.querySelector('label:contains("Пользователь")');
+        if (userBlock) {
+            userBlock.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return false;
+    }
+    return true;
+}
+</script>
+
+<style>
+.user-item:hover {
+    background: rgba(234, 88, 12, 0.05) !important;
+    border-color: var(--primary) !important;
+}
+
+#user_search:focus {
+    outline: none;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.1);
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: white;
+    margin: auto;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    max-width: 700px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.4s ease;
+    position: relative;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+    padding: 25px 30px;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.modal-header h2 {
+    color: white;
+    margin: 0;
+    font-size: 1.5em;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-close {
+    color: white;
+    font-size: 2em;
+    font-weight: 300;
+    cursor: pointer;
+    line-height: 1;
+    transition: transform 0.2s ease;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-close:hover {
+    transform: rotate(90deg);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.modal-body {
+    padding: 30px;
+}
+</style>
+{% endblock %}
+

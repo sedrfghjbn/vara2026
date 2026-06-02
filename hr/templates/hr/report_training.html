@@ -1,0 +1,62 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Отчёт по обучению{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-graduation-cap"></i> Отчёт по обучению</h1>
+    <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+        <a href="{% url 'hr:report_training' %}?format=csv" class="btn btn-secondary">
+            <i class="fas fa-file-csv"></i> Экспорт CSV
+        </a>
+        <a href="{% url 'hr:report_training' %}?format=xlsx" class="btn btn-secondary">
+            <i class="fas fa-file-excel"></i> Экспорт XLSX
+        </a>
+        <a href="{% url 'hr:report_training' %}?format=json" class="btn btn-secondary">
+            <i class="fas fa-file-code"></i> Экспорт JSON
+        </a>
+    </div>
+</div>
+
+<div class="stats-panel">
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-calendar"></i> Запланировано</div>
+        <div class="stat-value income">{{ planned_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-spinner"></i> В процессе</div>
+        <div class="stat-value expense">{{ in_progress_count }}</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label"><i class="fas fa-check"></i> Завершено</div>
+        <div class="stat-value balance">{{ completed_count }}</div>
+    </div>
+</div>
+
+<div class="form-card" style="max-width: 100%;">
+    <h3 class="section-title">Список обучения</h3>
+    {% if trainings %}
+    <div class="transactions-list">
+        {% for training in trainings %}
+        <div class="transaction-card">
+            <div class="transaction-info" style="flex: 1;">
+                <div class="transaction-category">{{ training.title }}</div>
+                <div class="transaction-description">{{ training.description|truncatewords:15|default:"Без описания" }}</div>
+                <div class="transaction-date">
+                    {{ training.start_date|date:"d.m.Y" }} - {{ training.end_date|date:"d.m.Y" }} | 
+                    Участников: {{ training.participants.count }} | 
+                    Ответственный: {{ training.responsible.username|default:"Не указан" }}
+                </div>
+            </div>
+            <span style="padding: 5px 15px; border-radius: 20px; font-size: 0.85em; font-weight: 600; background: {% if training.status == 'completed' %}#D1FAE5{% elif training.status == 'in_progress' %}#DBEAFE{% elif training.status == 'planned' %}#FEF3C7{% else %}#FEE2E2{% endif %}; color: {% if training.status == 'completed' %}#065F46{% elif training.status == 'in_progress' %}#1E40AF{% elif training.status == 'planned' %}#92400E{% else %}#991B1B{% endif %};">
+                {{ training.get_status_display }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">Обучения не найдены</div>
+    {% endif %}
+</div>
+{% endblock %}
+

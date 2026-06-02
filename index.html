@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Семейные финансы</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Семейные финансы</h1>
+            <div class="balance">
+                <div class="balance-item">
+                    <span class="label">Доходы:</span>
+                    <span class="value income" id="totalIncome">0 ₽</span>
+                </div>
+                <div class="balance-item">
+                    <span class="label">Расходы:</span>
+                    <span class="value expense" id="totalExpense">0 ₽</span>
+                </div>
+                <div class="balance-item">
+                    <span class="label">Баланс:</span>
+                    <span class="value balance-amount" id="totalBalance">0 ₽</span>
+                </div>
+            </div>
+        </header>
+
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="transactions">Транзакции</button>
+            <button class="tab-btn" data-tab="budgets">Бюджеты</button>
+            <button class="tab-btn" data-tab="goals">Цели</button>
+            <button class="tab-btn" data-tab="reports">Отчеты</button>
+        </nav>
+
+        <!-- Вкладка Транзакции -->
+        <div class="tab-content active" id="transactions">
+            <div class="section">
+                <h2>Добавить транзакцию</h2>
+                <form id="transactionForm">
+                    <div class="form-group">
+                        <label>Тип:</label>
+                        <select id="transactionType" required>
+                            <option value="income">Доход</option>
+                            <option value="expense">Расход</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Категория:</label>
+                        <select id="transactionCategory" required>
+                            <option value="">Выберите категорию</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Сумма:</label>
+                        <input type="number" id="transactionAmount" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Описание:</label>
+                        <input type="text" id="transactionDescription" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Дата:</label>
+                        <input type="date" id="transactionDate" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Добавить</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>История транзакций</h2>
+                <div class="filters">
+                    <select id="filterType">
+                        <option value="all">Все</option>
+                        <option value="income">Доходы</option>
+                        <option value="expense">Расходы</option>
+                    </select>
+                    <select id="filterCategory">
+                        <option value="all">Все категории</option>
+                    </select>
+                </div>
+                <div id="transactionsList" class="transactions-list"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка Бюджеты -->
+        <div class="tab-content" id="budgets">
+            <div class="section">
+                <h2>Создать бюджет</h2>
+                <form id="budgetForm">
+                    <div class="form-group">
+                        <label>Категория:</label>
+                        <select id="budgetCategory" required>
+                            <option value="">Выберите категорию</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Лимит (₽):</label>
+                        <input type="number" id="budgetLimit" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Период:</label>
+                        <select id="budgetPeriod" required>
+                            <option value="month">Месяц</option>
+                            <option value="week">Неделя</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Создать бюджет</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>Мои бюджеты</h2>
+                <div id="budgetsList" class="budgets-list"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка Цели -->
+        <div class="tab-content" id="goals">
+            <div class="section">
+                <h2>Создать финансовую цель</h2>
+                <form id="goalForm">
+                    <div class="form-group">
+                        <label>Название цели:</label>
+                        <input type="text" id="goalName" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Целевая сумма (₽):</label>
+                        <input type="number" id="goalAmount" min="0" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Текущая сумма (₽):</label>
+                        <input type="number" id="goalCurrent" min="0" step="0.01" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Срок:</label>
+                        <input type="date" id="goalDeadline" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Создать цель</button>
+                </form>
+            </div>
+
+            <div class="section">
+                <h2>Мои цели</h2>
+                <div id="goalsList" class="goals-list"></div>
+            </div>
+        </div>
+
+        <!-- Вкладка Отчеты -->
+        <div class="tab-content" id="reports">
+            <div class="section">
+                <h2>Финансовые отчеты</h2>
+                <div class="report-filters">
+                    <div class="form-group">
+                        <label>Период:</label>
+                        <select id="reportPeriod">
+                            <option value="week">Неделя</option>
+                            <option value="month" selected>Месяц</option>
+                            <option value="year">Год</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>С:</label>
+                        <input type="date" id="reportStartDate">
+                    </div>
+                    <div class="form-group">
+                        <label>По:</label>
+                        <input type="date" id="reportEndDate">
+                    </div>
+                    <button type="button" class="btn btn-primary" id="generateReport">Сформировать отчет</button>
+                </div>
+
+                <div id="reportContent" class="report-content">
+                    <div class="report-section">
+                        <h3>Расходы по категориям</h3>
+                        <div id="expensesByCategory" class="chart-container"></div>
+                    </div>
+                    <div class="report-section">
+                        <h3>Динамика доходов и расходов</h3>
+                        <div id="incomeExpenseChart" class="chart-container"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+

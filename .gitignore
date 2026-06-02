@@ -1,0 +1,9 @@
+.env
+db.sqlite3
+.telegram_poll.lock
+__pycache__/
+*.py[cod]
+media/
+*.log
+.venv/
+venv/

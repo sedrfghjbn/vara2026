@@ -1,0 +1,45 @@
+{% extends 'hr/base.html' %}
+
+{% block title %}Импорт сотрудников{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title"><i class="fas fa-file-import"></i> Импорт сотрудников</h1>
+    <a href="{% url 'hr:employees_list' %}" class="btn btn-secondary" style="width: auto; margin-top: 20px;">
+        <i class="fas fa-arrow-left"></i> Назад к списку
+    </a>
+</div>
+
+<div class="form-card">
+    <h3 class="section-title">Загрузка файла</h3>
+    <p style="color: var(--text-secondary); margin-bottom: 25px;">
+        Поддерживаемые форматы: CSV, XLSX<br>
+        Обязательные поля: first_name, last_name, email, phone, date_of_birth, hire_date<br>
+        Опциональные поля: middle_name, department, position, status
+    </p>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="file">Выберите файл</label>
+            <input type="file" name="file" id="file" accept=".csv,.xlsx,.xls" class="form-control" required>
+        </div>
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn btn-primary" style="flex: 1;">
+                <i class="fas fa-upload"></i> Импортировать
+            </button>
+            <a href="{% url 'hr:employees_list' %}" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-times"></i> Отмена
+            </a>
+        </div>
+    </form>
+    
+    <div style="margin-top: 40px; padding: 20px; background: var(--bg); border-radius: 10px;">
+        <h4 style="margin-bottom: 15px;">Пример CSV файла:</h4>
+        <pre style="background: white; padding: 15px; border-radius: 5px; overflow-x: auto;">first_name,last_name,middle_name,email,phone,date_of_birth,hire_date,department,position,status
+Иван,Иванов,Иванович,ivan@example.com,+79991234567,1990-01-15,2020-01-10,IT отдел,Разработчик,active
+Мария,Петрова,Сергеевна,maria@example.com,+79991234568,1992-05-20,2021-03-15,HR отдел,HR-менеджер,active</pre>
+    </div>
+</div>
+{% endblock %}
+
